@@ -1,0 +1,50 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug ugv_odometry with straight.txt",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_04/build/ugv_odometry",
+      "args": [
+        "data/straight.txt"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_04",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
+    {
+      "name": "Debug ugv_odometry with turn.txt",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_04/build/ugv_odometry",
+      "args": [
+        "data/turn.txt"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_04",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
+    {
+      "name": "Debug ugv_odometry with combined.txt",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_04/build/ugv_odometry",
+      "args": [
+        "data/combined.txt"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_04",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    }
+  ]
+}

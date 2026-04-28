@@ -24,8 +24,7 @@ int main(int argc, char** argv) {
     long fl_ticks = 0, fr_ticks = 0, bl_ticks = 0, br_ticks = 0;
     long prev_fl_ticks = 0, prev_fr_ticks = 0, prev_bl_ticks = 0, prev_br_ticks = 0;
     bool first_line = true;
-    while (!input_file.eof()) {
-        input_file >> timestamp_ms >> fl_ticks >> fr_ticks >> bl_ticks >> br_ticks;
+    while (input_file >> timestamp_ms >> fl_ticks >> fr_ticks >> bl_ticks >> br_ticks) {
         if (first_line) {
             prev_fl_ticks = fl_ticks;
             prev_fr_ticks = fr_ticks;
@@ -50,8 +49,8 @@ int main(int argc, char** argv) {
         float d = (d_l + d_r) / 2.0;
         float d_theta = (d_r - d_l) / kWheelBase;
         // Step 5
-        x += d * cos(theta + d_theta / 2.0);
-        y += d * sin(theta + d_theta / 2.0);
+        x += d * std::cos(theta + d_theta / 2.0);
+        y += d * std::sin(theta + d_theta / 2.0);
         theta += d_theta;
         // Output the current pose
         std::cout << timestamp_ms << " " << x << " " << y << " " << theta << "\n";
