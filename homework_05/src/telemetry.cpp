@@ -125,7 +125,7 @@ bool try_compute_frame_rate_hz(const Frame frames[], int frame_count, double& fr
         return false;
     }
 
-    frame_rate_hz = static_cast<double>((frame_count - 1) * 1000 / elapsed_ms);
+    frame_rate_hz = static_cast<double>((frame_count - 1) * 1000.0 / elapsed_ms);
     return true;
 }
 
@@ -156,9 +156,53 @@ bool try_read_frames(const char* path, Frame frames[], int max_frames, int& fram
     return true;
 }
 
+bool are_frames_valid(const Frame frames[], int frame_count) {
+    bool valid = true;
+    float min_t_c = -40.0;
+    float max_t_c = 120.0;
+    for (int i = 1; i < frame_count; ++i) {
+        // check timestamps are non-decreasing
+        if (frames[i].timestamp_ms < frames[i - 1].timestamp_ms) {
+            std::cerr << "validation error: timestamps are not non-decreasing at frame " << i << '\n';
+            valid = false;
+        }
+        // check sequence numbers are increasing by at most 1
+        if (frames[i].seq != frames[i - 1].seq + 1) {
+            std::cerr << "validation error: sequence numbers are not increasing by at most 1 at frame " << i << '\n';
+            valid = false;
+        }
+        // check voltage is non-negative
+        if (frames[i].voltage_v < 0.0) {
+            std::cerr << "validation error: voltage (" << frames[i].voltage_v << ") is negative at frame " << i << '\n';
+            valid = false;
+        }
+        // check temperature range in -40 to 120 Celsius
+        if (frames[i].temperature_c < min_t_c || frames[i].temperature_c > max_t_c) {
+            std::cerr << "validation error: temperature (" << frames[i].temperature_c << ") is out of range [" << min_t_c << ", " << max_t_c << "] at frame " << i << '\n';
+            valid = false;
+        }
+        // check GPS fix is 0 or 1
+        if (frames[i].gps_fix != 0 && frames[i].gps_fix != 1) {
+            std::cerr << "validation error: gps_fix (" << frames[i].gps_fix << ") is not 0 or 1 at frame " << i << '\n';
+            valid = false;
+        }
+        // check satellites is non-negative
+        if (frames[i].satellites < 0) {
+            std::cerr << "validation error: satellites (" << frames[i].satellites << ") is negative at frame " << i << '\n';
+            valid = false;
+        }
+    }
+
+    return valid;
+}
+
 bool try_summarize(const Frame frames[], int frame_count, Summary& summary) {
     if (frame_count == 0) {
         std::cerr << "error: cannot summarize empty frame list\n";
+        return false;
+    }
+    if (!are_frames_valid(frames, frame_count)) {
+        std::cerr << "error: cannot summarize invalid frames\n";
         return false;
     }
 

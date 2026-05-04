@@ -110,7 +110,8 @@
         "bad_missing_field.txt",
         "bad_zero_delta.txt",
         "empty.txt",
-        "good.txt"
+        "good.txt",
+        "not_so_good.txt"
       ],
       "default": "good.txt"
     }
