@@ -94,6 +94,18 @@
           "ignoreFailures": true
         }
       ]
-    }
+    },
+    {
+      "name": "Debug ballistics_cli",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_06/build/ballistics_cli",
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_06",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
   ]
 }

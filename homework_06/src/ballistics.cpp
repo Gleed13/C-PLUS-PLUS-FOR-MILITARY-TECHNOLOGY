@@ -1,37 +1,12 @@
 #define _USE_MATH_DEFINES
 
 #include <iostream>
-#include <fstream>
 #include <cmath>
 #include <cstring>
 
+#include "ballistics.hpp"
+
 const float g = 9.81f;       // gravity acceleration in m/s^2
-
-struct InputData
-{
-    float xd, yd, zd;        // drone coordinates
-    float xt, yt;            // target coordinates
-    float attackSpeed;       // meters per second
-    float accelerationPath;  // meters
-    char ammoName[50];
-};
-
-struct OutputData
-{
-    bool isTooCloseToTarget;
-    float intermXd;          // intermediate x-coordinate of the drone
-    float intermYd;          // intermediate y-coordinate of the drone
-    float fireX;             // x-coordinate where the projectile should be dropped
-    float fireY;             // y-coordinate where the projectile should be dropped
-};
-
-struct Ammo
-{
-    const char* ammoType;
-    float mass;
-    float drag;
-    float lift;
-};
 
 Ammo ammoTable[] =
 {
@@ -58,33 +33,6 @@ bool GetAmmoParams(const char* name, float* mass, float* drag, float* lift)
     }
 
     return false;
-}
-
-bool ReadInput(InputData* input)
-{
-    FILE* f = fopen("input.txt", "r");
-
-    if (!f)
-    {
-        std::cout << "Error: File error" << std::endl;
-        return false;
-    }
-
-    int scanned = fscanf(f, "%f %f %f %f %f %f %f %49s",
-        &input->xd, &input->yd, &input->zd,
-        &input->xt, &input->yt,
-        &input->attackSpeed, &input->accelerationPath,
-        input->ammoName);
-
-    fclose(f);
-
-    if (scanned != 8)
-    {
-        std::cout << "Error: Invalid input format" << std::endl;
-        return false;
-    }
-
-    return true;
 }
 
 bool CalculateFreeFallTime(
@@ -197,70 +145,29 @@ bool calculateOutputData(
     return true;
 }
 
-bool writeOutput(const OutputData* outputData)
+bool ComputeDropSolution(const InputData *input, OutputData *output)
 {
-    FILE* out = fopen("output.txt", "w");
-
-    if (!out)
-    {
-        std::cout << "Error: Cannot create output.txt" << std::endl;
-        return false;
-    }
-
-    if (outputData->isTooCloseToTarget)
-    {
-        fprintf(out, "%.3f %.3f %.3f %.3f\n",
-            outputData->intermXd,
-            outputData->intermYd,
-            outputData->fireX,
-            outputData->fireY);
-    }
-    else
-    {
-        fprintf(out, "%.3f %.3f\n",
-            outputData->fireX,
-            outputData->fireY);
-    }
-
-    fclose(out);
-    return true;
-}
-
-int main()
-{
-    InputData input;
     float mass, drag, lift; // mass in kg, drag and lift coefficients are dimensionless
     float t;                // projectile free-fall time in seconds
     float h;                // projectile trajectory horizontal distance in meters
-    OutputData output;
 
-    if (!ReadInput(&input))
+    if (!GetAmmoParams(input->ammoName, &mass, &drag, &lift))
+    {
+        std::cout << "Error: Unknown ammo type: " << input->ammoName << std::endl;
+        return 1;
+    }
+
+    if (!CalculateFreeFallTime(input->zd, input->attackSpeed, mass, drag, lift, &t))
     {
         return 1;
     }
 
-    if (!GetAmmoParams(input.ammoName, &mass, &drag, &lift))
-    {
-        std::cout << "Error: Unknown ammo type: " << input.ammoName << std::endl;
-        return 1;
-    }
-
-    if (!CalculateFreeFallTime(input.zd, input.attackSpeed, mass, drag, lift, &t))
+    if (!calculateHorizontalDistance(t, input->attackSpeed, mass, drag, lift, &h))
     {
         return 1;
     }
 
-    if (!calculateHorizontalDistance(t, input.attackSpeed, mass, drag, lift, &h))
-    {
-        return 1;
-    }
-
-    if (!calculateOutputData(input.xd, input.yd, input.xt, input.yt, input.accelerationPath, h, &output))
-    {
-        return 1;
-    }
-
-    if (!writeOutput(&output))
+    if (!calculateOutputData(input->xd, input->yd, input->xt, input->yt, input->accelerationPath, h, output))
     {
         return 1;
     }
