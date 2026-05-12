@@ -3,7 +3,8 @@ struct InputData {
   float xt_, yt_;            // target coordinates
   float attack_speed_;       // meters per second
   float acceleration_path_;  // meters
-  char ammo_name_[50];
+  char ammo_name_[50];       // NOLINT(cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-avoid-magic-numbers,
+                             // readability-magic-numbers): fixed-size C string buffer is required by the homework input format.
 };
 
 struct OutputData {
@@ -23,10 +24,13 @@ struct Ammo {
 
 auto get_ammo_params(const char* name, float* mass, float* drag, float* lift) -> bool;
 
+// NOLINTBEGIN(readability-identifier-length): short mathematical coordinate names, time variables and horizontal distance from the task
+// statement.
 auto calculate_free_fall_time(float zd, float attack_speed, float mass, float drag, float lift, float* t) -> bool;
 
 auto calculate_horizontal_distance(float t, float attack_speed, float mass, float drag, float lift, float* h) -> bool;
 
 auto calculate_output_data(float xd, float yd, float xt, float yt, float acceleration_path, float h, OutputData* output_data) -> bool;
+// NOLINTEND(readability-identifier-length)
 
 auto compute_drop_solution(const InputData* input, OutputData* output) -> int;
