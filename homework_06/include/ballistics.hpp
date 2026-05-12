@@ -1,32 +1,32 @@
 struct InputData {
-  float xd, yd, zd;        // drone coordinates
-  float xt, yt;            // target coordinates
-  float attackSpeed;       // meters per second
-  float accelerationPath;  // meters
-  char ammoName[50];
+  float xd_, yd_, zd_;       // drone coordinates
+  float xt_, yt_;            // target coordinates
+  float attack_speed_;       // meters per second
+  float acceleration_path_;  // meters
+  char ammo_name_[50];
 };
 
 struct OutputData {
-  bool isTooCloseToTarget;
-  float intermXd;  // intermediate x-coordinate of the drone
-  float intermYd;  // intermediate y-coordinate of the drone
-  float fireX;     // x-coordinate where the projectile should be dropped
-  float fireY;     // y-coordinate where the projectile should be dropped
+  bool is_too_close_to_target_;
+  float interm_xd_;  // intermediate x-coordinate of the drone
+  float interm_yd_;  // intermediate y-coordinate of the drone
+  float fire_x_;     // x-coordinate where the projectile should be dropped
+  float fire_y_;     // y-coordinate where the projectile should be dropped
 };
 
 struct Ammo {
-  const char* ammoType;
-  float mass;
-  float drag;
-  float lift;
+  const char* ammo_type_;
+  float mass_;
+  float drag_;
+  float lift_;
 };
 
-bool GetAmmoParams(const char* name, float* mass, float* drag, float* lift);
+auto get_ammo_params(const char* name, float* mass, float* drag, float* lift) -> bool;
 
-bool CalculateFreeFallTime(float zd, float attackSpeed, float mass, float drag, float lift, float* t);
+auto calculate_free_fall_time(float zd, float attack_speed, float mass, float drag, float lift, float* t) -> bool;
 
-bool calculateHorizontalDistance(float t, float attackSpeed, float mass, float drag, float lift, float* h);
+auto calculate_horizontal_distance(float t, float attack_speed, float mass, float drag, float lift, float* h) -> bool;
 
-bool calculateOutputData(float xd, float yd, float xt, float yt, float accelerationPath, float h, OutputData* outputData);
+auto calculate_output_data(float xd, float yd, float xt, float yt, float acceleration_path, float h, OutputData* output_data) -> bool;
 
-bool ComputeDropSolution(const InputData* input, OutputData* output);
+auto compute_drop_solution(const InputData* input, OutputData* output) -> int;

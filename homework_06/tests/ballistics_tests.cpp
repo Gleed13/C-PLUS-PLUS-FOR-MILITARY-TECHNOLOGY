@@ -4,59 +4,59 @@
 
 TEST(Ballistics, ComputesKnownDropPoint)
 {
-  const InputData input{
-    .xd = 100.0,
-    .yd = 100.0,
-    .zd = 100.0,
-    .xt = 200.0,
-    .yt = 200.0,
-    .attackSpeed = 10.0,
-    .accelerationPath = 10.0,
-    .ammoName = "VOG-17",
+  const InputData kInput{
+    .xd_ = 100.0,
+    .yd_ = 100.0,
+    .zd_ = 100.0,
+    .xt_ = 200.0,
+    .yt_ = 200.0,
+    .attack_speed_ = 10.0,
+    .acceleration_path_ = 10.0,
+    .ammo_name_ = "VOG-17",
   };
 
-  OutputData output;
-  bool is_failed = ComputeDropSolution(&input, &output);
+  OutputData output{};
+  int result = compute_drop_solution(&kInput, &output);
 
-  EXPECT_FALSE(is_failed);
-  EXPECT_NEAR(output.fireX, 173.759, 0.01);
-  EXPECT_NEAR(output.fireY, 173.759, 0.01);
+  EXPECT_EQ(result, 0);
+  EXPECT_NEAR(output.fire_x_, 173.759, 0.01);
+  EXPECT_NEAR(output.fire_y_, 173.759, 0.01);
 }
 
 TEST(Ballistics, HandlesUnknownAmmoType)
 {
-  const InputData input{
-    .xd = 100.0,
-    .yd = 100.0,
-    .zd = 100.0,
-    .xt = 200.0,
-    .yt = 200.0,
-    .attackSpeed = 10.0,
-    .accelerationPath = 10.0,
-    .ammoName = "UnknownAmmo",
+  const InputData kInput{
+    .xd_ = 100.0,
+    .yd_ = 100.0,
+    .zd_ = 100.0,
+    .xt_ = 200.0,
+    .yt_ = 200.0,
+    .attack_speed_ = 10.0,
+    .acceleration_path_ = 10.0,
+    .ammo_name_ = "UnknownAmmo",
   };
 
-  OutputData output;
-  bool is_failed = ComputeDropSolution(&input, &output);
+  OutputData output{};
+  int result = compute_drop_solution(&kInput, &output);
 
-  EXPECT_TRUE(is_failed);
+  EXPECT_NE(result, 0);
 }
 
 TEST(Ballistics, HandlesZeroHorizontalDistance)
 {
-  const InputData input{
-    .xd = 100.0,
-    .yd = 100.0,
-    .zd = 100.0,
-    .xt = 100.0,
-    .yt = 100.0,
-    .attackSpeed = 10.0,
-    .accelerationPath = 10.0,
-    .ammoName = "VOG-17",
+  const InputData kInput{
+    .xd_ = 100.0,
+    .yd_ = 100.0,
+    .zd_ = 100.0,
+    .xt_ = 100.0,
+    .yt_ = 100.0,
+    .attack_speed_ = 10.0,
+    .acceleration_path_ = 10.0,
+    .ammo_name_ = "VOG-17",
   };
 
-  OutputData output;
-  bool is_failed = ComputeDropSolution(&input, &output);
+  OutputData output{};
+  int result = compute_drop_solution(&kInput, &output);
 
-  EXPECT_TRUE(is_failed);
+  EXPECT_NE(result, 0);
 }

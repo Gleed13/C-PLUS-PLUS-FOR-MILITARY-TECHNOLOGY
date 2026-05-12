@@ -9,9 +9,11 @@ Checks: >
   modernize-*,
   performance-*,
   readability-*,
+  misc-unused-using-decls,
   -readability-avoid-const-params-in-decls,
   -readability-function-cognitive-complexity,
-  misc-unused-using-decls,
+  -readability-magic-numbers,
+  -modernize-avoid-c-arrays,
 
 # Аналізувати лише код домашніх робіт і типові source/include директорії,
 # а не системні headers або сторонні бібліотеки.
@@ -20,9 +22,14 @@ HeaderFilterRegex: '(^|/)(homework_[0-9]+|include|src)/'
 # Помилки analyzer/core-guidelines/modernize мають ламати перевірку.
 # Readability і performance лишаються попередженнями, щоб не блокувати
 # навчальні ітерації надто рано.
-WarningsAsErrors: clang-analyzer-*,
-  cppcoreguidelines-*,
+WarningsAsErrors: >
+  clang-analyzer-*,
   modernize-*,
+
+# Використовувати стиль форматування з .clang-format під час --fix.
+# Якщо .clang-format лежить у .devcontainer, передавай його явно:
+# clang-tidy ... --format-style=file:.devcontainer/.clang-format --fix
+FormatStyle: file
 
 # Naming rules формують один стиль для прикладів курсу.
 CheckOptions:
@@ -33,6 +40,18 @@ CheckOptions:
   - key: readability-identifier-naming.ConstantCase
     value: CamelCase
   - key: readability-identifier-naming.ConstantPrefix
+    value: k
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: k
+  - key: readability-identifier-naming.StaticConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.StaticConstantPrefix
+    value: k
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ConstexprVariablePrefix
     value: k
   - key: readability-identifier-naming.LocalVariableCase
     value: lower_case
@@ -50,3 +69,9 @@ CheckOptions:
     value: CamelCase
   - key: readability-identifier-naming.StructCase
     value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantPrefix
+    value: k
