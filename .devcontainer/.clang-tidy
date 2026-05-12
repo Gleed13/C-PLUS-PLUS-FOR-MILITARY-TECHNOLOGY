@@ -9,6 +9,8 @@ Checks: >
   modernize-*,
   performance-*,
   readability-*,
+  -readability-avoid-const-params-in-decls,
+  -readability-function-cognitive-complexity,
   misc-unused-using-decls,
 
 # Аналізувати лише код домашніх робіт і типові source/include директорії,
@@ -20,8 +22,8 @@ HeaderFilterRegex: '(^|/)(homework_[0-9]+|include|src)/'
 # навчальні ітерації надто рано.
 WarningsAsErrors: >
   clang-analyzer-*,
-  modernize-*,
   cppcoreguidelines-*,
+  modernize-*,
 
 # Використовувати стиль форматування з .clang-format під час --fix.
 # Якщо .clang-format лежить у .devcontainer, передавай його явно:
