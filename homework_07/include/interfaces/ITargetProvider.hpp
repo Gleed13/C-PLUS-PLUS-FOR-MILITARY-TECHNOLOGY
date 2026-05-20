@@ -1,3 +1,4 @@
+#pragma once
 #include "models/Target.hpp"
 
 class ITargetProvider {

@@ -1,3 +1,5 @@
+#pragma once
+
 struct Ammo
 {
     const char* ammoType;

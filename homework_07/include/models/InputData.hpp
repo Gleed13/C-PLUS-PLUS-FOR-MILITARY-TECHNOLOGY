@@ -1,3 +1,5 @@
+#pragma once
+
 struct InputData
 {
     float xd, yd, zd;        // drone coordinates

@@ -1,3 +1,5 @@
+#pragma once
+
 class IConfigLoader {
 public:
     virtual void loadConfig(const char* filename) = 0;

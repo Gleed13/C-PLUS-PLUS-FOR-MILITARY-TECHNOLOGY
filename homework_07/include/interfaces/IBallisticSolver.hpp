@@ -1,3 +1,5 @@
+#pragma once
+
 class IBallisticSolver {
 public:
     virtual void solve() = 0;

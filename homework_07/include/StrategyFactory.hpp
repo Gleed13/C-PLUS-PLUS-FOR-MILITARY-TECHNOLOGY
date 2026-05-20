@@ -1,6 +1,6 @@
-#include "strategies/IBallisticSolver.hpp"
-#include "strategies/ITargetProvider.hpp"
-#include "strategies/IConfigLoader.hpp"
+#include "interfaces/IBallisticSolver.hpp"
+#include "interfaces/ITargetProvider.hpp"
+#include "interfaces/IConfigLoader.hpp"
 
 class StrategyFactory {
     enum class SolverType { ANALYTICAL };
