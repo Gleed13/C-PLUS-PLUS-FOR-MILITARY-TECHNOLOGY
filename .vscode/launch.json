@@ -94,6 +94,21 @@
           "ignoreFailures": true
         }
       ]
-    }
+    },
+    {
+      "name": "Debug homework_07",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_07/build/mission_processor_cli",
+      "args": [
+        "data/targets.json"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_07",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
   ]
 }
