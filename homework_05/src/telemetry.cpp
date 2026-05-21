@@ -1,5 +1,6 @@
 #include "telemetry.hpp"
 
+#include <climits>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -38,62 +39,104 @@ int split_line(char line[], char* fields[], int max_fields) {
     return count;
 }
 
-long parse_long(const char* text) {
+bool try_parse_long(const char* text, long& value) {
     char* end = nullptr;
-    const long value = std::strtol(text, &end, 10);
+    value = std::strtol(text, &end, 10);
 
     if (end == text) {
-        std::abort();
+        return false;
     }
 
-    return value;
+    return true;
 }
 
-int parse_int(const char* text) {
-    return static_cast<int>(parse_long(text));
+bool try_parse_int(const char* text, int& value) {
+    long temp_value;
+
+    if (try_parse_long(text, temp_value)) {
+        // Check if long fits into int
+        if (temp_value < INT_MIN || temp_value > INT_MAX)
+        {
+            return false;
+        }
+        value = static_cast<int>(temp_value);
+        return true;
+    }
+
+    return false;
 }
 
-double parse_double(const char* text) {
+bool try_parse_double(const char* text, double& value) {
     char* end = nullptr;
-    const double value = std::strtod(text, &end);
+    value = std::strtod(text, &end);
 
     if (end == text) {
-        std::abort();
+        return false;
     }
 
-    return value;
+    return true;
 }
 
-Frame parse_frame(char line[]) {
+bool try_parse_frame(char line[], Frame& frame) {
     char* fields[EXPECTED_FIELD_COUNT] = {};
     const int field_count = split_line(line, fields, EXPECTED_FIELD_COUNT);
-    (void)field_count;
+    if (field_count != EXPECTED_FIELD_COUNT) {
+        std::cerr << "error: expected " << EXPECTED_FIELD_COUNT
+                  << " fields, but got " << field_count << '\n';
+        return false;
+    }
 
-    Frame frame{};
-    frame.timestamp_ms = parse_long(fields[0]);
-    frame.seq = parse_int(fields[1]);
-    frame.voltage_v = parse_double(fields[2]);
-    frame.current_a = parse_double(fields[3]);
-    frame.temperature_c = parse_double(fields[4]);
-    frame.gps_fix = parse_int(fields[5]);
-    frame.satellites = parse_int(fields[6]);
-    return frame;
+    if (!try_parse_long(fields[0], frame.timestamp_ms)) {
+        std::cerr << "error: failed to parse timestamp_ms: " << fields[0] << '\n';
+        return false;
+    }
+    if (!try_parse_int(fields[1], frame.seq)) {
+        std::cerr << "error: failed to parse seq: " << fields[1] << '\n';
+        return false;
+    }
+    if (!try_parse_double(fields[2], frame.voltage_v)) {
+        std::cerr << "error: failed to parse voltage_v: " << fields[2] << '\n';
+        return false;
+    }
+    if (!try_parse_double(fields[3], frame.current_a)) {
+        std::cerr << "error: failed to parse current_a: " << fields[3] << '\n';
+        return false;
+    }
+    if (!try_parse_double(fields[4], frame.temperature_c)) {
+        std::cerr << "error: failed to parse temperature_c: " << fields[4] << '\n';
+        return false;
+    }
+    if (!try_parse_int(fields[5], frame.gps_fix)) {
+        std::cerr << "error: failed to parse gps_fix: " << fields[5] << '\n';
+        return false;
+    }
+    if (!try_parse_int(fields[6], frame.satellites)) {
+        std::cerr << "error: failed to parse satellites: " << fields[6] << '\n';
+        return false;
+    }
+    return true;
 }
 
-double compute_frame_rate_hz(const Frame frames[], int frame_count) {
+bool try_compute_frame_rate_hz(const Frame frames[], int frame_count, double& frame_rate_hz) {
     const long elapsed_ms = frames[frame_count - 1].timestamp_ms - frames[0].timestamp_ms;
 
-    return static_cast<double>((frame_count - 1) * 1000 / elapsed_ms);
+    if (elapsed_ms == 0) {
+        std::cerr << "error: cannot compute frame rate with zero elapsed time\n";
+        return false;
+    }
+
+    frame_rate_hz = static_cast<double>((frame_count - 1) * 1000.0 / elapsed_ms);
+    return true;
 }
 
-int read_frames(const char* path, Frame frames[], int max_frames) {
+bool try_read_frames(const char* path, Frame frames[], int max_frames, int& frame_count) {
     std::ifstream input{path};
     if (!input) {
         std::cerr << "error: failed to open input file: " << path << '\n';
-        return 0;
+        return false;
     }
 
-    int frame_count = 0;
+    frame_count = 0;
     char line[MAX_LINE_LENGTH];
 
     while (input.getline(line, MAX_LINE_LENGTH)) {
@@ -102,16 +145,67 @@ int read_frames(const char* path, Frame frames[], int max_frames) {
         }
 
         if (frame_count < max_frames) {
-            frames[frame_count] = parse_frame(line);
+            if (!try_parse_frame(line, frames[frame_count])) {
+                std::cerr << "error: failed to parse frame at line " << (frame_count + 1) << '\n';
+                return false;
+            }
             ++frame_count;
         }
     }
 
-    return frame_count;
+    return true;
 }
 
-Summary summarize(const Frame frames[], int frame_count) {
-    Summary summary{};
+bool are_frames_valid(const Frame frames[], int frame_count) {
+    bool valid = true;
+    float min_t_c = -40.0;
+    float max_t_c = 120.0;
+    for (int i = 1; i < frame_count; ++i) {
+        // check timestamps are non-decreasing
+        if (frames[i].timestamp_ms < frames[i - 1].timestamp_ms) {
+            std::cerr << "validation error: timestamps are not non-decreasing at frame " << i << '\n';
+            valid = false;
+        }
+        // check sequence numbers are increasing by at most 1
+        if (frames[i].seq != frames[i - 1].seq + 1) {
+            std::cerr << "validation error: sequence numbers are not increasing by at most 1 at frame " << i << '\n';
+            valid = false;
+        }
+        // check voltage is non-negative
+        if (frames[i].voltage_v < 0.0) {
+            std::cerr << "validation error: voltage (" << frames[i].voltage_v << ") is negative at frame " << i << '\n';
+            valid = false;
+        }
+        // check temperature range in -40 to 120 Celsius
+        if (frames[i].temperature_c < min_t_c || frames[i].temperature_c > max_t_c) {
+            std::cerr << "validation error: temperature (" << frames[i].temperature_c << ") is out of range [" << min_t_c << ", " << max_t_c << "] at frame " << i << '\n';
+            valid = false;
+        }
+        // check GPS fix is 0 or 1
+        if (frames[i].gps_fix != 0 && frames[i].gps_fix != 1) {
+            std::cerr << "validation error: gps_fix (" << frames[i].gps_fix << ") is not 0 or 1 at frame " << i << '\n';
+            valid = false;
+        }
+        // check satellites is non-negative
+        if (frames[i].satellites < 0) {
+            std::cerr << "validation error: satellites (" << frames[i].satellites << ") is negative at frame " << i << '\n';
+            valid = false;
+        }
+    }
+
+    return valid;
+}
+
+bool try_summarize(const Frame frames[], int frame_count, Summary& summary) {
+    if (frame_count == 0) {
+        std::cerr << "error: cannot summarize empty frame list\n";
+        return false;
+    }
+    if (!are_frames_valid(frames, frame_count)) {
+        std::cerr << "error: cannot summarize invalid frames\n";
+        return false;
+    }
+
     summary.frames_total = frame_count;
     summary.frames_valid = frame_count;
     summary.voltage_min = frames[0].voltage_v;
@@ -138,8 +232,11 @@ Summary summarize(const Frame frames[], int frame_count) {
 
     const int temperature_tenths = static_cast<int>(temperature_sum * 10.0) / frame_count;
     summary.temperature_avg = static_cast<double>(temperature_tenths) / 10.0;
-    summary.frame_rate_hz = compute_frame_rate_hz(frames, frame_count);
-    return summary;
+    if (!try_compute_frame_rate_hz(frames, frame_count, summary.frame_rate_hz)) {
+        return false;
+    }
+
+    return true;
 }
 
 void print_summary(const Summary& summary) {
