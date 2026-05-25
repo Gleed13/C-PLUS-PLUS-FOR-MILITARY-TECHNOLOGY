@@ -15,14 +15,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(json)
 
-add_executable(mission_processor_cli src/main.cpp
+add_executable(mission_processor_with_containers_cli src/main.cpp
     src/strategies/StrategyFactory.cpp
     src/strategies/FileConfigLoader.cpp
     src/strategies/JsonTargetProvider.cpp
     src/strategies/AnalyticalBallisticSolver.cpp
     src/features/MissionProcessor.cpp)
 
-target_include_directories(mission_processor_cli PUBLIC include)
-target_link_libraries(mission_processor_cli PRIVATE nlohmann_json::nlohmann_json)
+target_include_directories(mission_processor_with_containers_cli PUBLIC include)
+target_link_libraries(mission_processor_with_containers_cli PRIVATE nlohmann_json::nlohmann_json)
 
-target_compile_options(mission_processor_cli PRIVATE -Wall -Wextra -pedantic)
+target_compile_options(mission_processor_with_containers_cli PRIVATE -Wall -Wextra -pedantic)
