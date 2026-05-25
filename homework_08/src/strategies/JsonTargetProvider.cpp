@@ -1,28 +1,24 @@
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include "strategies/JsonTargetProvider.hpp"
 
 int JsonTargetProvider::getTargetCount()
 {
-    return static_cast<int>(count_);
+    return static_cast<int>(items_.size());
 }
 
 Coord* JsonTargetProvider::getTarget(int index)
 {
-    if (items_ == nullptr) {
+    if (items_.empty()) {
         std::cerr << "Error: targets are not loaded\n";
-        return nullptr;
-    }
-
-    if (index < 0) {
-        std::cerr << "Error: target index out of range\n";
         return nullptr;
     }
 
     const auto target_index = static_cast<std::size_t>(index);
 
-    if (target_index >= count_) {
+    if (index < 0 || target_index >= items_.size()) {
         std::cerr << "Error: target index out of range\n";
         return nullptr;
     }
@@ -30,7 +26,7 @@ Coord* JsonTargetProvider::getTarget(int index)
     return &items_[target_index];
 }
 
-JsonTargetProvider::JsonTargetProvider(const char* config_path)
+JsonTargetProvider::JsonTargetProvider(const std::string config_path)
     : config_path_(config_path)
 {
     if (!loadConfig()) {
@@ -59,31 +55,23 @@ bool JsonTargetProvider::loadConfig()
         return false;
     }
 
-    count_ = json_data.size();
-
-    if (count_ == 0) {
+    items_.clear();
+    if (json_data.size() == 0) {
         return true;
     }
 
-    items_ = new Coord[count_];
+    items_.reserve(json_data.size());
 
-    for (std::size_t i = 0; i < count_; ++i) {
-        const auto& item = json_data.at(i);
-
-        items_[i].x = item.at("x").get<float>();
-        items_[i].y = item.at("y").get<float>();
+    for (const auto& item : json_data) {
+        items_.push_back(Coord{
+            item.at("x").get<float>(),
+            item.at("y").get<float>()
+        });
     }
 
     std::cout << "Info: json target provider loaded" << std::endl;
 
     return true;
-}
-
-JsonTargetProvider::~JsonTargetProvider()
-{
-    delete[] items_;
-    items_ = nullptr;
-    count_ = 0;
 }
 
 auto JsonTargetProvider::validateCoordJson(const json& item, std::size_t index) -> bool {
@@ -126,6 +114,7 @@ auto JsonTargetProvider::validateTargetsJson(const json& json_data) -> bool {
         return false;
     }
 
+    // simple for loop is used to provide better error messages with target index
     for (std::size_t i = 0; i < json_data.size(); ++i) {
         if (!validateCoordJson(json_data.at(i), i)) {
             return false;

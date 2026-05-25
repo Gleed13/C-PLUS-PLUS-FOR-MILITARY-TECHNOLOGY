@@ -1,45 +1,41 @@
-#include <cstring>
+#include <fstream>
 #include <iostream>
+#include <string>
 
+#include "models/Ammo.hpp"
 #include "strategies/FileConfigLoader.hpp"
 
-bool FileConfigLoader::tryLoadConfig(const char* filename)
+bool FileConfigLoader::tryLoadConfig(const std::string filename)
 {
-    FILE* f = fopen(filename, "r");
+    std::ifstream file(filename);
 
-    if (!f)
+    if (!file.is_open())
     {
         std::cout << "Error: File error" << std::endl;
         return false;
     }
 
-    // delete config data if already loaded
-    if (config_ != nullptr) {
-        delete config_;
-        config_ = nullptr;
-    }
+    clearConfig();
 
     config_ = new DroneConfig();
 
-    int scanned = fscanf(f, "%f %f %f %f %f %49s",
-        &config_->startPos.x, &config_->startPos.y, &config_->altitude,
-        &config_->attackSpeed, &config_->accelPath,
-        config_->ammoName);
+    file >> config_->startPos.x
+         >> config_->startPos.y
+         >> config_->altitude
+         >> config_->attackSpeed
+         >> config_->accelPath
+         >> config_->ammoName;
 
-    fclose(f);
-
-    if (scanned != 6)
+    if (!file)
     {
         std::cout << "Error: Invalid input format" << std::endl;
-        delete config_;
-        config_ = nullptr;
+        clearConfig();
         return false;
     }
 
     if (!tryLoadAmmoParams())
     {
-        delete config_;
-        config_ = nullptr;
+        clearConfig();
         return false;
     }
 
@@ -58,32 +54,34 @@ Ammo* FileConfigLoader::getAmmoParams() const
 
 FileConfigLoader::~FileConfigLoader()
 {
+    clearConfig();
+    clearAmmoParams();
+}
+
+void FileConfigLoader::clearConfig()
+{
     delete config_;
     config_ = nullptr;
+}
+
+void FileConfigLoader::clearAmmoParams()
+{
     delete ammo_params_;
     ammo_params_ = nullptr;
 }
 
 bool FileConfigLoader::tryLoadAmmoParams()
 {
-    ammo_params_ = new Ammo();
-    int count = sizeof(ammoTable) / sizeof(ammoTable[0]);
-
-    for (int i = 0; i < count; i++)
+    auto it = ammoTable.find(config_->ammoName);
+    if (it == ammoTable.end())
     {
-        if (strcmp(ammoTable[i].ammoType, config_->ammoName) == 0)
-        {
-            ammo_params_->ammoType = ammoTable[i].ammoType;
-            ammo_params_->mass = ammoTable[i].mass;
-            ammo_params_->drag = ammoTable[i].drag;
-            ammo_params_->lift = ammoTable[i].lift;
-            return true;
-        }
+        std::cout << "Error: Unknown ammo type: " << config_->ammoName << std::endl;
+        return false;
     }
 
-    std::cout << "Error: Unknown ammo type: " << config_->ammoName << std::endl;
-    delete ammo_params_;
-    ammo_params_ = nullptr;
+    clearAmmoParams();
+    ammo_params_ = new Ammo();
+    *ammo_params_ = it->second;
 
-    return false;
+    return true;
 }

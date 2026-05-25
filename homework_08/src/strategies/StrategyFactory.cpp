@@ -1,3 +1,5 @@
+#include <string>
+
 #include "strategies/StrategyFactory.hpp"
 #include "strategies/FileConfigLoader.hpp"
 #include "strategies/JsonTargetProvider.hpp"
@@ -14,7 +16,7 @@ IConfigLoader* StrategyFactory::createLoader(LoaderType type)
     }
 }
 
-ITargetProvider* StrategyFactory::createProvider(ProviderType type, const char* param)
+ITargetProvider* StrategyFactory::createProvider(ProviderType type, const std::string param)
 {
     switch (type)
     {

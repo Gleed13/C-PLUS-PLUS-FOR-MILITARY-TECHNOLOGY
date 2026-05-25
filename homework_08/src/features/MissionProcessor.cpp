@@ -1,5 +1,6 @@
-#include "features/MissionProcessor.hpp"
 #include <iostream>
+
+#include "features/MissionProcessor.hpp"
 
 MissionProcessor::MissionProcessor(IConfigLoader* config_loader, ITargetProvider* target_provider, IBallisticSolver* solver)
     : config_loader_(config_loader), target_provider_(target_provider), solver_(solver)

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "Coord.hpp"
 
 struct DroneConfig
@@ -8,5 +10,5 @@ struct DroneConfig
     float altitude;
     float attackSpeed;
     float accelPath;
-    char ammoName[32];
+    std::string ammoName;
 };
