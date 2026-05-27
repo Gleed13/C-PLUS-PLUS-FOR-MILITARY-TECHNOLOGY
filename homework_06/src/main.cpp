@@ -79,6 +79,7 @@ auto main(int argc, char** argv) -> int
   InputData input{};
   OutputData output{};
 
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   if (!read_input(&input, argv[1])) {
     return 1;
   }
@@ -87,6 +88,7 @@ auto main(int argc, char** argv) -> int
     return 1;
   }
 
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   if (!write_output(&output, argv[2])) {
     return 1;
   }
