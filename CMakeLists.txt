@@ -18,5 +18,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_subdirectory(homework_04)
 add_subdirectory(homework_06)
 
+if(NOT CMAKE_CROSSCOMPILING)
+  enable_testing()
+
+  include(FetchContent)
+  include(GoogleTest)
+
+  FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz
+      DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  )
+
+  FetchContent_MakeAvailable(googletest)
+endif()
+
 # Demo-код для заняття 2.4: локальне і віддалене відлагодження через GDB.
 add_subdirectory(demos/lesson_2_4/debug_probe)
