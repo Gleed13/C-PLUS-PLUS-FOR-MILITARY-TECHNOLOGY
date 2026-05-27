@@ -2,10 +2,10 @@
 
 #include "ballistics.hpp"
 
-auto read_input(InputData* input) -> bool
+auto read_input(InputData* input, const char* input_path) -> bool
 {
   // NOLINTBEGIN(cppcoreguidelines-owning-memory): C-style file API is used intentionally for this homework task.
-  FILE* input_file = fopen("input.txt", "r");
+  FILE* input_file = fopen(input_path, "r");
 
   if (input_file == nullptr) {
     std::cout << "Error: File error" << '\n';
@@ -38,13 +38,13 @@ auto read_input(InputData* input) -> bool
   return true;
 }
 
-auto write_output(const OutputData* output_data) -> bool
+auto write_output(const OutputData* output_data, const char* output_path) -> bool
 {
   // NOLINTBEGIN(cppcoreguidelines-owning-memory): C-style file API is used intentionally for this homework task.
-  FILE* output_file = fopen("output.txt", "w");
+  FILE* output_file = fopen(output_path, "w");
 
   if (output_file == nullptr) {
-    std::cout << "Error: Cannot create output.txt" << '\n';
+    std::cout << "Error: Cannot create " << output_path << '\n';
     return false;
   }
 
@@ -69,12 +69,17 @@ auto write_output(const OutputData* output_data) -> bool
   return true;
 }
 
-auto main() -> int
+auto main(int argc, char** argv) -> int
 {
+  if (argc != 3) {
+    std::cerr << "usage: ballistics_cli <input_path> <output_path>\n";
+    return 1;
+  }
+
   InputData input{};
   OutputData output{};
 
-  if (!read_input(&input)) {
+  if (!read_input(&input, argv[1])) {
     return 1;
   }
 
@@ -82,7 +87,7 @@ auto main() -> int
     return 1;
   }
 
-  if (!write_output(&output)) {
+  if (!write_output(&output, argv[2])) {
     return 1;
   }
 
