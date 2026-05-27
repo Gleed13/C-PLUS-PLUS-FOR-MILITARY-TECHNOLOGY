@@ -2,12 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug ugv_odometry with straight.txt",
+      "name": "Debug ugv_odometry",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/homework_04/build/ugv_odometry",
       "args": [
-        "data/straight.txt"
+        "data/${input:ugvOdometryInputFile}"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/homework_04",
@@ -17,34 +17,27 @@
       "miDebuggerPath": "/usr/bin/gdb"
     },
     {
-      "name": "Debug ugv_odometry with turn.txt",
+      "name": "Debug telemetry_check",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/homework_04/build/ugv_odometry",
+      "program": "${workspaceFolder}/homework_05/build/telemetry_check",
       "args": [
-        "data/turn.txt"
+        "data/${input:telemetryInputFile}"
       ],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/homework_04",
+      "cwd": "${workspaceFolder}/homework_05",
       "environment": [],
       "externalConsole": false,
       "MIMode": "gdb",
-      "miDebuggerPath": "/usr/bin/gdb"
-    },
-    {
-      "name": "Debug ugv_odometry with combined.txt",
-      "type": "cppdbg",
-      "request": "launch",
-      "program": "${workspaceFolder}/homework_04/build/ugv_odometry",
-      "args": [
-        "data/combined.txt"
-      ],
-      "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/homework_04",
-      "environment": [],
-      "externalConsole": false,
-      "MIMode": "gdb",
-      "miDebuggerPath": "/usr/bin/gdb"
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "CMake: configure and build homework_05",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
     },
     {
       // Локальний debug demo-коду заняття 2.4. Використовує bad input,
@@ -107,5 +100,32 @@
       "MIMode": "gdb",
       "miDebuggerPath": "/usr/bin/gdb"
     },
+  ],
+  "inputs": [
+    {
+      "id": "ugvOdometryInputFile",
+      "type": "pickString",
+      "description": "Select ugv_odometry input file",
+      "options": [
+        "straight.txt",
+        "turn.txt",
+        "combined.txt"
+      ],
+      "default": "combined.txt"
+    },
+    {
+      "id": "telemetryInputFile",
+      "type": "pickString",
+      "description": "Select telemetry input file",
+      "options": [
+        "bad_invalid_number.txt",
+        "bad_missing_field.txt",
+        "bad_zero_delta.txt",
+        "empty.txt",
+        "good.txt",
+        "not_so_good.txt"
+      ],
+      "default": "good.txt"
+    }
   ]
 }

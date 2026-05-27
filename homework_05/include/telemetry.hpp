@@ -25,11 +25,11 @@ struct Summary {
     double frame_rate_hz;
 };
 
-// Reads frames from a whitespace-separated telemetry log.
-int read_frames(const char* path, Frame frames[], int max_frames);
+// Try to read frames from a whitespace-separated telemetry log, returning false on failure.
+bool try_read_frames(const char* path, Frame frames[], int max_frames, int& frame_count);
 
 // Calculates summary values for already parsed frames.
-Summary summarize(const Frame frames[], int frame_count);
+bool try_summarize(const Frame frames[], int frame_count, Summary& summary);
 
 // Prints summary in the stable homework output format.
 void print_summary(const Summary& summary);

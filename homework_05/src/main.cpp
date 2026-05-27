@@ -10,9 +10,17 @@ int main(int argc, char** argv) {
     }
 
     Frame frames[MAX_TELEMETRY_FRAMES];
-    const int frame_count = read_frames(argv[1], frames, MAX_TELEMETRY_FRAMES);
+    int frame_count;
+    if (!try_read_frames(argv[1], frames, MAX_TELEMETRY_FRAMES, frame_count)) {
+        std::cerr << "error: failed to read frames from file: " << argv[1] << '\n';
+        return 1;
+    }
 
-    const Summary summary = summarize(frames, frame_count);
+    Summary summary;
+    if (!try_summarize(frames, frame_count, summary)) {
+        std::cerr << "error: failed to summarize frames\n";
+        return 1;
+    }
     print_summary(summary);
 
     return 0;
