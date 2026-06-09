@@ -1,38 +1,39 @@
-#include <string>
-
 #include "strategies/StrategyFactory.hpp"
 #include "strategies/FileConfigLoader.hpp"
+#include "strategies/JsonConfigLoader.hpp"
 #include "strategies/JsonTargetProvider.hpp"
 #include "strategies/AnalyticalBallisticSolver.hpp"
 
-IConfigLoader* StrategyFactory::createLoader(LoaderType type)
+std::unique_ptr<IConfigLoader> StrategyFactory::createLoader(LoaderType type)
 {
     switch (type)
     {
         case LoaderType::FILE:
-            return new FileConfigLoader();
+            return std::make_unique<FileConfigLoader>();
+        case LoaderType::JSON:
+            return std::make_unique<JsonConfigLoader>();
         default:
             return nullptr;
     }
 }
 
-ITargetProvider* StrategyFactory::createProvider(ProviderType type, const std::string param)
+std::unique_ptr<ITargetProvider> StrategyFactory::createProvider(ProviderType type, const std::string param)
 {
     switch (type)
     {
         case ProviderType::JSON:
-            return new JsonTargetProvider(param);
+            return std::make_unique<JsonTargetProvider>(param);
         default:
             return nullptr;
     }
 }
 
-IBallisticSolver* StrategyFactory::createSolver(SolverType type)
+std::unique_ptr<IBallisticSolver> StrategyFactory::createSolver(SolverType type)
 {
     switch (type)
     {
         case SolverType::ANALYTICAL:
-            return new AnalyticalBallisticSolver();
+            return std::make_unique<AnalyticalBallisticSolver>();
         default:
             return nullptr;
     }

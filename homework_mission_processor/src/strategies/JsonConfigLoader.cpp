@@ -15,8 +15,6 @@ bool JsonConfigLoader::tryLoadConfig(const std::string filename)
         return false;
     }
 
-    clearConfig();
-
     nlohmann::json j;
     file >> j;
 
@@ -38,13 +36,13 @@ bool JsonConfigLoader::tryLoadConfig(const std::string filename)
     if (!file)
     {
         ERROR("Error: Invalid input format");
-        clearConfig();
+        config_.reset();
         return false;
     }
 
     if (!tryLoadAmmoParams())
     {
-        clearConfig();
+        config_.reset();
         return false;
     }
 
@@ -63,12 +61,6 @@ Ammo* JsonConfigLoader::getAmmoParams() const
     return ammo_params_.get();
 }
 
-JsonConfigLoader::~JsonConfigLoader()
-{
-    clearConfig();
-    clearAmmoParams();
-}
-
 bool JsonConfigLoader::tryLoadAmmoParams()
 {
     auto it = ammoTable.find(config_->ammoName);
@@ -78,7 +70,6 @@ bool JsonConfigLoader::tryLoadAmmoParams()
         return false;
     }
 
-    clearAmmoParams();
     ammo_params_ = std::make_unique<Ammo>();
     *ammo_params_ = it->second;
 

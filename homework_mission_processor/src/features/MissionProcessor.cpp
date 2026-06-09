@@ -1,16 +1,23 @@
 #include <iostream>
+#include <memory>
+#include <utility>
 
 #include "features/MissionProcessor.hpp"
 
-MissionProcessor::MissionProcessor(IConfigLoader* config_loader, ITargetProvider* target_provider, IBallisticSolver* solver)
-    : config_loader_(config_loader), target_provider_(target_provider), solver_(solver)
+MissionProcessor::MissionProcessor(
+    std::unique_ptr<IConfigLoader> config_loader,
+    std::unique_ptr<ITargetProvider> target_provider,
+    std::unique_ptr<IBallisticSolver> solver)
+    : config_loader_(std::move(config_loader)),
+      target_provider_(std::move(target_provider)),
+      solver_(std::move(solver))
 {
 }
 
 void MissionProcessor::init()
 {
     // Load configuration
-    if (!config_loader_->tryLoadConfig("data/input.txt"))
+    if (!config_loader_->tryLoadConfig("data/config.json"))
     {
         std::cerr << "Failed to load configuration\n";
         return;
@@ -48,7 +55,7 @@ void MissionProcessor::reset()
     current_step_ = 0;
 }
 
-void MissionProcessor::changeSolver(IBallisticSolver* new_solver)
+void MissionProcessor::changeSolver(std::unique_ptr<IBallisticSolver> new_solver)
 {
-    solver_ = new_solver;
+    solver_ = std::move(new_solver);
 }

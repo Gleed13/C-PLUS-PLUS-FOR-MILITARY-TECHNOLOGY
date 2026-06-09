@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "interfaces/IBallisticSolver.hpp"
@@ -12,7 +13,7 @@ enum class LoaderType { FILE, JSON };
 enum class ProviderType { JSON };
 enum class SolverType { ANALYTICAL };
 
-    static IConfigLoader* createLoader(LoaderType type);
-    static ITargetProvider* createProvider(ProviderType type, const std::string param);
-    static IBallisticSolver* createSolver(SolverType type);
+    static std::unique_ptr<IConfigLoader> createLoader(LoaderType type);
+    static std::unique_ptr<ITargetProvider> createProvider(ProviderType type, const std::string param);
+    static std::unique_ptr<IBallisticSolver> createSolver(SolverType type);
 };

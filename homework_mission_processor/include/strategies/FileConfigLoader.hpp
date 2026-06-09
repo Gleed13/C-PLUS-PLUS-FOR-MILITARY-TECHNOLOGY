@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "interfaces/IConfigLoader.hpp"
@@ -9,12 +10,10 @@ public:
     bool tryLoadConfig(const std::string filename) override;
     DroneConfig* getConfig() const override;
     Ammo* getAmmoParams() const override;
-    ~FileConfigLoader() override;
-private:
-    DroneConfig* config_;
-    Ammo* ammo_params_;
 
-    void clearConfig();
-    void clearAmmoParams();
+private:
+    std::unique_ptr<DroneConfig> config_;
+    std::unique_ptr<Ammo> ammo_params_;
+
     bool tryLoadAmmoParams();
 };

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 
 #include "features/MissionProcessor.hpp"
 #include "strategies/StrategyFactory.hpp"
@@ -10,11 +11,11 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    IConfigLoader* loader = StrategyFactory::createLoader(StrategyFactory::LoaderType::FILE);
-    ITargetProvider* provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::JSON, argv[1]);
-    IBallisticSolver* solver = StrategyFactory::createSolver(StrategyFactory::SolverType::ANALYTICAL);
+    auto loader = StrategyFactory::createLoader(StrategyFactory::LoaderType::JSON);
+    auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::JSON, argv[1]);
+    auto solver = StrategyFactory::createSolver(StrategyFactory::SolverType::ANALYTICAL);
 
-    MissionProcessor processor(loader, provider, solver);
+    MissionProcessor processor(std::move(loader), std::move(provider), std::move(solver));
     processor.init();
 
     // Process all targets
@@ -29,11 +30,4 @@ int main(int argc, char** argv)
             std::cerr << "Failed to calculate drop point for current target\n";
         }
     }
-
-    delete loader;
-    loader = nullptr;
-    delete provider;
-    provider = nullptr;
-    delete solver;
-    solver = nullptr;
 }
