@@ -1,4 +1,7 @@
+#include <cmath>
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "features/Logging.hpp"
@@ -14,48 +17,215 @@ MissionProcessor::MissionProcessor(
 {
 }
 
-void MissionProcessor::init()
+bool MissionProcessor::init()
 {
-    // Load configuration
     if (!config_loader_->tryLoadConfig("data/config.json"))
     {
         ERROR("Failed to load configuration");
-        return;
-    }
-}
-
-bool MissionProcessor::hasNext()
-{
-    return target_provider_->getTargetCount() > current_step_;
-}
-
-bool MissionProcessor::step(DropPoint* drop_point)
-{
-    if (!hasNext())
-        return false;
-
-    Coord* target = target_provider_->getTarget(current_step_);
-    if (target == nullptr) {
-        ERROR("Failed to get target at index " << current_step_);
+        initialized_ = false;
         return false;
     }
 
-    if (!solver_->trySolve(config_loader_->getConfig(), target,config_loader_->getAmmoParams(), drop_point))
-    {
-        ERROR("Failed to solve for target at index " << current_step_);
+    const DroneConfig* config = config_loader_->getConfig();
+    if (config == nullptr || config_loader_->getAmmoParams() == nullptr) {
+        ERROR("Configuration loader returned incomplete data");
+        initialized_ = false;
         return false;
     }
 
-    ++current_step_;
+    drone_ = DroneState{
+        .position = config->startPos,
+        .direction = config->initialDir,
+        .speed = 0.0F,
+        .status = DroneStatus::Stopped
+    };
+    initialized_ = true;
     return true;
+}
+
+SimulationResult MissionProcessor::run(std::size_t max_steps)
+{
+    SimulationResult result;
+    if (!initialized_ || max_steps == 0) {
+        ERROR("Mission processor is not initialized or max steps is zero");
+        return result;
+    }
+
+    const DroneConfig& config = *config_loader_->getConfig();
+    const Ammo& ammo = *config_loader_->getAmmoParams();
+    result.steps.reserve(max_steps);
+
+    for (std::size_t step_index = 0; step_index < max_steps; ++step_index) {
+        SimulationStep step;
+        step.drone = drone_;
+
+        if (step_index == 0) {
+            result.steps.push_back(step);
+            continue;
+        }
+
+        const float simulation_time =
+            static_cast<float>(step_index) * config.simTimeStep;
+        const auto selection = target_selector_.select(
+            drone_,
+            simulation_time,
+            config,
+            ammo,
+            *target_provider_,
+            *solver_);
+        if (!selection.has_value()) {
+            ERROR("Failed to select a target at simulation step " << step_index);
+            result.outcome = SimulationOutcome::Failed;
+            return result;
+        }
+
+        DroneConfig current_config = config;
+        current_config.startPos = drone_.position;
+        current_config.initialDir = drone_.direction;
+
+        const auto current_solution = solver_->solve(
+            current_config,
+            selection->predictedPosition,
+            ammo);
+        if (!current_solution.has_value()) {
+            ERROR("Failed to calculate initial ballistic solution at simulation step " << step_index);
+            result.outcome = SimulationOutcome::Failed;
+            return result;
+        }
+
+        const auto predicted_target = predictTargetPosition(
+            selection->targetIndex,
+            simulation_time,
+            current_solution->fallTime);
+        if (!predicted_target.has_value()) {
+            ERROR("Failed to predict target position at simulation step " << step_index);
+            result.outcome = SimulationOutcome::Failed;
+            return result;
+        }
+
+        auto predicted_solution = solver_->solve(
+            current_config,
+            predicted_target.value(),
+            ammo);
+        if (!predicted_solution.has_value()) {
+            ERROR("Failed to calculate predicted ballistic solution at simulation step " << step_index);
+            result.outcome = SimulationOutcome::Failed;
+            return result;
+        }
+
+        const float distance_to_predicted_target = std::hypot(
+            predicted_target->x - drone_.position.x,
+            predicted_target->y - drone_.position.y);
+        const float remaining_acceleration_path =
+            movement_controller_.remainingAccelerationPath(drone_, config);
+        const bool needs_intermediate_point =
+            predicted_solution->horizontalDistance +
+                remaining_acceleration_path -
+                config.hitRadius * kHitRadiusCoefficient >
+            distance_to_predicted_target;
+        if (!needs_intermediate_point) {
+            predicted_solution->dropPoint.intermPoint.reset();
+        }
+
+        step.targetIndex = static_cast<int>(selection->targetIndex);
+        step.dropPoint = predicted_solution->dropPoint.firePoint;
+        step.aimPoint =
+            drone_.position +
+            directionVector(drone_.direction) *
+                predicted_solution->horizontalDistance;
+        step.predictedTarget = predicted_target.value();
+        result.steps.push_back(step);
+
+        if (isInFireRange(
+                predicted_target.value(),
+                predicted_solution->horizontalDistance,
+                config)) {
+            result.outcome = SimulationOutcome::TargetReached;
+            return result;
+        }
+
+        if (!movement_controller_.update(
+                drone_,
+                predicted_solution->dropPoint,
+                config)) {
+            ERROR("Failed to update drone movement at simulation step " << step_index);
+            result.outcome = SimulationOutcome::Failed;
+            return result;
+        }
+    }
+
+    result.outcome = SimulationOutcome::MaxStepsReached;
+    return result;
 }
 
 void MissionProcessor::reset()
 {
-    current_step_ = 0;
+    if (!initialized_) {
+        return;
+    }
+
+    const DroneConfig& config = *config_loader_->getConfig();
+    drone_ = DroneState{
+        .position = config.startPos,
+        .direction = config.initialDir,
+        .speed = 0.0F,
+        .status = DroneStatus::Stopped
+    };
 }
 
 void MissionProcessor::changeSolver(std::unique_ptr<IBallisticSolver> new_solver)
 {
     solver_ = std::move(new_solver);
+}
+
+std::optional<Coord> MissionProcessor::predictTargetPosition(
+    std::size_t target_index,
+    float simulation_time,
+    float fall_time) const
+{
+    const DroneConfig& config = *config_loader_->getConfig();
+    const auto current_position = target_provider_->getPosition(
+        target_index,
+        simulation_time,
+        config.arrayTimeStep);
+    const auto previous_position = target_provider_->getPosition(
+        target_index,
+        std::max(0.0F, simulation_time - config.simTimeStep),
+        config.arrayTimeStep);
+    if (!current_position.has_value() || !previous_position.has_value()) {
+        return std::nullopt;
+    }
+
+    const Coord target_velocity =
+        (current_position.value() - previous_position.value()) /
+        config.simTimeStep;
+    return current_position.value() + target_velocity * fall_time;
+}
+
+bool MissionProcessor::isInFireRange(
+    const Coord& predicted_target,
+    float horizontal_distance,
+    const DroneConfig& config) const
+{
+    if (drone_.status != DroneStatus::Moving) {
+        return false;
+    }
+
+    const Coord predicted_hit =
+        drone_.position +
+        directionVector(drone_.direction) * horizontal_distance;
+    const float distance_to_target = std::hypot(
+        predicted_target.x - predicted_hit.x,
+        predicted_target.y - predicted_hit.y);
+
+    return distance_to_target <=
+        config.hitRadius * kHitRadiusCoefficient;
+}
+
+Coord MissionProcessor::directionVector(float direction)
+{
+    return {
+        std::cos(direction),
+        std::sin(direction)
+    };
 }

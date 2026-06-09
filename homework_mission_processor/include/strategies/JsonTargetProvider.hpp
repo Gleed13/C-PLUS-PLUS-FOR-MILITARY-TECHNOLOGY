@@ -2,26 +2,35 @@
 
 #include <cstddef>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "interfaces/ITargetProvider.hpp"
 #include "models/Coord.hpp"
+#include "models/TargetTrack.hpp"
 
 using json = nlohmann::json;
 
 class JsonTargetProvider : public ITargetProvider {
 public:
     JsonTargetProvider(const std::string config_path);
-    int getTargetCount() override;
-    Coord* getTarget(int index) override;
+    std::size_t getTargetCount() const override;
+    std::optional<Coord> getPosition(
+        std::size_t target_index,
+        float time,
+        float sample_interval) const override;
+
 private:
     static constexpr std::size_t kMaxTargets = 32;
 
     const std::string config_path_;
-    std::vector<Coord> items_;
+    std::vector<TargetTrack> tracks_;
 
     bool loadConfig();
-    auto validateCoordJson(const json& item, std::size_t index) -> bool;
-    auto validateTargetsJson(const json& json_data) -> bool;
+    bool validateCoordJson(
+        const json& item,
+        std::size_t target_index,
+        std::size_t position_index) const;
+    bool validateTargetsJson(const json& json_data) const;
 };

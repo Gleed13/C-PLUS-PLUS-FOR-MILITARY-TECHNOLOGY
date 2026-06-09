@@ -21,6 +21,10 @@ add_executable(mission_processor_full_cli src/main.cpp
     src/strategies/JsonConfigLoader.cpp
     src/strategies/JsonTargetProvider.cpp
     src/strategies/AnalyticalBallisticSolver.cpp
+    src/features/DroneMovementController.cpp
+    src/features/TrajectoryEstimator.cpp
+    src/features/TargetSelector.cpp
+    src/features/SimulationRecorder.cpp
     src/features/MissionProcessor.cpp)
 
 target_include_directories(mission_processor_full_cli PUBLIC include)

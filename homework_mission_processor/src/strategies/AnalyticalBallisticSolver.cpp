@@ -3,21 +3,37 @@
 #include "features/Logging.hpp"
 #include "strategies/AnalyticalBallisticSolver.hpp"
 
-bool AnalyticalBallisticSolver::trySolve(const DroneConfig* droneConfig, const Coord* targetPos, const Ammo* ammo, DropPoint* dropPoint)
+std::optional<BallisticSolution> AnalyticalBallisticSolver::solve(
+    const DroneConfig& drone_config,
+    const Coord& target_position,
+    const Ammo& ammo)
 {
     float t = NAN;
     float h = NAN;
-    if (!tryCalculateFreeFallTime(droneConfig->altitude, droneConfig->attackSpeed, ammo->mass, ammo->drag, ammo->lift, &t)) {
-        return false;
+    if (!tryCalculateFreeFallTime(drone_config.altitude, drone_config.attackSpeed, ammo.mass, ammo.drag, ammo.lift, &t)) {
+        return std::nullopt;
     }
-    if (!tryCalculateHorizontalDistance(t, droneConfig->attackSpeed, ammo->mass, ammo->drag, ammo->lift, &h)) {
-        return false;
+    if (!tryCalculateHorizontalDistance(t, drone_config.attackSpeed, ammo.mass, ammo.drag, ammo.lift, &h)) {
+        return std::nullopt;
     }
+
+    DropPoint drop_point;
     if (!tryCalculateDropPoint(
-            droneConfig->startPos.x, droneConfig->startPos.y, targetPos->x, targetPos->y, droneConfig->accelPath, h, dropPoint)) {
-        return false;
+            drone_config.startPos.x,
+            drone_config.startPos.y,
+            target_position.x,
+            target_position.y,
+            drone_config.accelPath,
+            h,
+            &drop_point)) {
+        return std::nullopt;
     }
-    return true;
+
+    return BallisticSolution{
+        .dropPoint = drop_point,
+        .fallTime = t,
+        .horizontalDistance = h
+    };
 }
 
 bool AnalyticalBallisticSolver::tryCalculateFreeFallTime(float zd, float attackSpeed, float mass, float drag, float lift, float* t)

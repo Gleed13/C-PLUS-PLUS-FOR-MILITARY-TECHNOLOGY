@@ -1,29 +1,54 @@
+#include <cmath>
 #include <fstream>
+#include <optional>
 #include <string>
+#include <utility>
 
 #include "features/Logging.hpp"
 #include "strategies/JsonTargetProvider.hpp"
 
-int JsonTargetProvider::getTargetCount()
+std::size_t JsonTargetProvider::getTargetCount() const
 {
-    return static_cast<int>(items_.size());
+    return tracks_.size();
 }
 
-Coord* JsonTargetProvider::getTarget(int index)
+std::optional<Coord> JsonTargetProvider::getPosition(
+    std::size_t target_index,
+    float time,
+    float sample_interval) const
 {
-    if (items_.empty()) {
+    if (tracks_.empty()) {
         ERROR("Targets are not loaded");
-        return nullptr;
+        return std::nullopt;
     }
 
-    const auto target_index = static_cast<std::size_t>(index);
-
-    if (index < 0 || target_index >= items_.size()) {
+    if (target_index >= tracks_.size()) {
         ERROR("Target index out of range");
-        return nullptr;
+        return std::nullopt;
     }
 
-    return &items_[target_index];
+    if (!std::isfinite(time) || time < 0.0F) {
+        ERROR("Target query time must be finite and non-negative");
+        return std::nullopt;
+    }
+
+    if (!std::isfinite(sample_interval) || sample_interval <= 0.0F) {
+        ERROR("Target sample interval must be finite and positive");
+        return std::nullopt;
+    }
+
+    const auto& positions = tracks_[target_index].positions;
+    if (positions.empty()) {
+        ERROR("Target track has no positions");
+        return std::nullopt;
+    }
+
+    const float sample_position = std::fmod(time / sample_interval, static_cast<float>(positions.size()));
+    const auto current_index = static_cast<std::size_t>(std::floor(sample_position));
+    const auto next_index = (current_index + 1) % positions.size();
+    const float fraction = sample_position - static_cast<float>(current_index);
+
+    return positions[current_index] + (positions[next_index] - positions[current_index]) * fraction;
 }
 
 JsonTargetProvider::JsonTargetProvider(const std::string config_path)
@@ -55,69 +80,121 @@ bool JsonTargetProvider::loadConfig()
         return false;
     }
 
-    items_.clear();
-    if (json_data.size() == 0) {
-        return true;
+    tracks_.clear();
+    const auto& targets = json_data.at("targets");
+    tracks_.reserve(targets.size());
+
+    for (const auto& target : targets) {
+        TargetTrack track;
+        const auto& positions = target.at("positions");
+        track.positions.reserve(positions.size());
+
+        for (const auto& position : positions) {
+            track.positions.push_back(Coord{
+                position.at("x").get<float>(),
+                position.at("y").get<float>()
+            });
+        }
+
+        tracks_.push_back(std::move(track));
     }
 
-    items_.reserve(json_data.size());
-
-    for (const auto& item : json_data) {
-        items_.push_back(Coord{
-            item.at("x").get<float>(),
-            item.at("y").get<float>()
-        });
-    }
-
-    LOG("JSON target provider loaded");
+    LOG("JSON target provider loaded " << tracks_.size() << " moving targets");
 
     return true;
 }
 
-auto JsonTargetProvider::validateCoordJson(const json& item, std::size_t index) -> bool {
+bool JsonTargetProvider::validateCoordJson(
+    const json& item,
+    std::size_t target_index,
+    std::size_t position_index) const
+{
     if (!item.is_object()) {
-        ERROR("Target at index " << index << " must be an object");
+        ERROR("Position " << position_index << " for target " << target_index << " must be an object");
         return false;
     }
 
     if (!item.contains("x")) {
-        ERROR("Target at index " << index << " is missing field 'x'");
+        ERROR("Position " << position_index << " for target " << target_index << " is missing field 'x'");
         return false;
     }
 
     if (!item.contains("y")) {
-        ERROR("Target at index " << index << " is missing field 'y'");
+        ERROR("Position " << position_index << " for target " << target_index << " is missing field 'y'");
         return false;
     }
 
     if (!item.at("x").is_number()) {
-        ERROR("Field 'x' at index " << index << " must be a number");
+        ERROR("Field 'x' at position " << position_index << " for target " << target_index << " must be a number");
         return false;
     }
 
     if (!item.at("y").is_number()) {
-        ERROR("Field 'y' at index " << index << " must be a number");
+        ERROR("Field 'y' at position " << position_index << " for target " << target_index << " must be a number");
         return false;
     }
 
     return true;
 }
 
-auto JsonTargetProvider::validateTargetsJson(const json& json_data) -> bool {
-    if (!json_data.is_array()) {
-        ERROR("JSON root must be an array");
+bool JsonTargetProvider::validateTargetsJson(const json& json_data) const
+{
+    if (!json_data.is_object()) {
+        ERROR("JSON root must be an object");
         return false;
     }
 
-    if (json_data.size() > kMaxTargets) {
+    if (!json_data.contains("targetCount") || !json_data.at("targetCount").is_number_unsigned()) {
+        ERROR("Field 'targetCount' must be an unsigned integer");
+        return false;
+    }
+
+    if (!json_data.contains("timeSteps") || !json_data.at("timeSteps").is_number_unsigned()) {
+        ERROR("Field 'timeSteps' must be an unsigned integer");
+        return false;
+    }
+
+    if (!json_data.contains("targets") || !json_data.at("targets").is_array()) {
+        ERROR("Field 'targets' must be an array");
+        return false;
+    }
+
+    const auto target_count = json_data.at("targetCount").get<std::size_t>();
+    const auto time_steps = json_data.at("timeSteps").get<std::size_t>();
+    const auto& targets = json_data.at("targets");
+
+    if (target_count > kMaxTargets) {
         ERROR("Too many targets. Max allowed: " << kMaxTargets);
         return false;
     }
 
-    // simple for loop is used to provide better error messages with target index
-    for (std::size_t i = 0; i < json_data.size(); ++i) {
-        if (!validateCoordJson(json_data.at(i), i)) {
+    if (target_count != targets.size()) {
+        ERROR("Field 'targetCount' does not match the targets array size");
+        return false;
+    }
+
+    if (time_steps == 0) {
+        ERROR("Field 'timeSteps' must be greater than zero");
+        return false;
+    }
+
+    for (std::size_t target_index = 0; target_index < targets.size(); ++target_index) {
+        const auto& target = targets.at(target_index);
+        if (!target.is_object() || !target.contains("positions") || !target.at("positions").is_array()) {
+            ERROR("Target " << target_index << " must contain a positions array");
             return false;
+        }
+
+        const auto& positions = target.at("positions");
+        if (positions.size() != time_steps) {
+            ERROR("Target " << target_index << " position count does not match timeSteps");
+            return false;
+        }
+
+        for (std::size_t position_index = 0; position_index < positions.size(); ++position_index) {
+            if (!validateCoordJson(positions.at(position_index), target_index, position_index)) {
+                return false;
+            }
         }
     }
 
