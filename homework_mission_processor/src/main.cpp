@@ -1,13 +1,13 @@
-#include <iostream>
 #include <utility>
 
+#include "features/Logging.hpp"
 #include "features/MissionProcessor.hpp"
 #include "strategies/StrategyFactory.hpp"
 
 int main(int argc, char** argv)
 {
     if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <targets_input_file>\n";
+        ERROR("Usage: " << argv[0] << " <targets_input_file>");
         return 1;
     }
 
@@ -23,11 +23,11 @@ int main(int argc, char** argv)
         DropPoint drop_point;
         if (processor.step(&drop_point)) {
             if (drop_point.intermPoint.has_value()) {
-                std::cout << "Calculated intermediate point: (" << drop_point.intermPoint->x << ", " << drop_point.intermPoint->y << ")\n";
+                LOG("Calculated intermediate point: (" << drop_point.intermPoint->x << ", " << drop_point.intermPoint->y << ")");
             }
-            std::cout << "Calculated fire point: (" << drop_point.firePoint.x << ", " << drop_point.firePoint.y << ")\n";
+            LOG("Calculated fire point: (" << drop_point.firePoint.x << ", " << drop_point.firePoint.y << ")");
         } else {
-            std::cerr << "Failed to calculate drop point for current target\n";
+            ERROR("Failed to calculate drop point for current target");
         }
     }
 }

@@ -1,6 +1,6 @@
 #include <cmath>
-#include <iostream>
 
+#include "features/Logging.hpp"
 #include "strategies/AnalyticalBallisticSolver.hpp"
 
 bool AnalyticalBallisticSolver::trySolve(const DroneConfig* droneConfig, const Coord* targetPos, const Ammo* ammo, DropPoint* dropPoint)
@@ -26,30 +26,30 @@ bool AnalyticalBallisticSolver::tryCalculateFreeFallTime(float zd, float attackS
     float b = -3 * kGravity * mass * mass + 3 * drag * lift * mass * attackSpeed;
     float c = 6 * mass * mass * zd;
 
-    std::cout << "Debug: Coefficients of cubic equation: a=" << a << ", b=" << b << ", c=" << c << "\n";
+    DEBUG("Coefficients of cubic equation: a=" << a << ", b=" << b << ", c=" << c);
 
     float p = -b * b / (3 * a * a);
     float q = (2 * b * b * b) / (27 * a * a * a) + c / a;
 
-    std::cout << "Debug: Coefficients for depressed cubic: p=" << p << ", q=" << q << "\n";
+    DEBUG("Coefficients for depressed cubic: p=" << p << ", q=" << q);
     if (p >= 0) {
-        std::cout << "Error: p >= 0: No real roots" << std::endl;
+        ERROR("p >= 0: No real roots");
         return false;
     }
 
     float phiArg = 3 * q / (2 * p) * sqrt(-3 / p);
     if (phiArg < -1.0f || phiArg > 1.0f) {
-        std::cout << "Error: acos argument is out of bounds: " << phiArg << std::endl;
+        ERROR("acos argument is out of bounds: " << phiArg);
         return false;
     }
 
     float phi = acos(phiArg);
-    std::cout << "Debug: phi (angle for cosine solution): " << phi << " radians" << std::endl;
+    DEBUG("phi (angle for cosine solution): " << phi << " radians");
 
     *t = 2 * sqrt(-p / 3) * cos((phi + 4 * M_PI) / 3) - b / (3 * a);
-    std::cout << "Debug: Projectile`s free-fall time: " << *t << " seconds" << std::endl;
+    DEBUG("Projectile's free-fall time: " << *t << " seconds");
     if (*t <= 0) {
-        std::cout << "Error: Non-positive time to target: " << *t << " seconds" << std::endl;
+        ERROR("Non-positive time to target: " << *t << " seconds");
         return false;
     }
 
@@ -72,9 +72,9 @@ bool AnalyticalBallisticSolver::tryCalculateHorizontalDistance(float t, float at
                (36 * (1 + lift * lift) * mass * mass * mass * mass);
 
     *h = t1 + t2 + t3 + t4 + t5;
-    std::cout << "Debug: Projectile trajectory horizontal distance: " << *h << " meters" << std::endl;
+    DEBUG("Projectile trajectory horizontal distance: " << *h << " meters");
     if (*h <= 0) {
-        std::cout << "Error: Non-positive projectile trajectory horizontal distance: " << *h << " meters" << std::endl;
+        ERROR("Non-positive projectile trajectory horizontal distance: " << *h << " meters");
         return false;
     }
 
@@ -85,9 +85,9 @@ bool AnalyticalBallisticSolver::tryCalculateDropPoint(
     float xd, float yd, float xt, float yt, float accelerationPath, float h, DropPoint* dropPoint)
 {
     float distanceToTarget = sqrt((xt - xd) * (xt - xd) + (yt - yd) * (yt - yd));
-    std::cout << "Debug: Distance to target: " << distanceToTarget << " meters" << std::endl;
+    DEBUG("Distance to target: " << distanceToTarget << " meters");
     if (distanceToTarget <= 0) {
-        std::cout << "Error: Non-positive distance to target: " << distanceToTarget << " meters" << std::endl;
+        ERROR("Non-positive distance to target: " << distanceToTarget << " meters");
         return false;
     }
 

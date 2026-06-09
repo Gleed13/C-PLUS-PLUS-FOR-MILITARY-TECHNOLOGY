@@ -1,7 +1,7 @@
 #include <fstream>
-#include <iostream>
 #include <string>
 
+#include "features/Logging.hpp"
 #include "models/Ammo.hpp"
 #include "strategies/FileConfigLoader.hpp"
 
@@ -11,7 +11,7 @@ bool FileConfigLoader::tryLoadConfig(const std::string filename)
 
     if (!file.is_open())
     {
-        std::cout << "Error: File error" << std::endl;
+        ERROR("File error");
         return false;
     }
 
@@ -32,7 +32,7 @@ bool FileConfigLoader::tryLoadConfig(const std::string filename)
 
     if (!file)
     {
-        std::cout << "Error: Invalid input format" << std::endl;
+        ERROR("Invalid input format");
         config_.reset();
         return false;
     }
@@ -61,7 +61,7 @@ bool FileConfigLoader::tryLoadAmmoParams()
     auto it = ammoTable.find(config_->ammoName);
     if (it == ammoTable.end())
     {
-        std::cout << "Error: Unknown ammo type: " << config_->ammoName << std::endl;
+        ERROR("Unknown ammo type: " << config_->ammoName);
         return false;
     }
 

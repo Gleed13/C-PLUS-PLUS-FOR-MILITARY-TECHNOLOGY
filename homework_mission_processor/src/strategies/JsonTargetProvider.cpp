@@ -1,7 +1,7 @@
 #include <fstream>
-#include <iostream>
 #include <string>
 
+#include "features/Logging.hpp"
 #include "strategies/JsonTargetProvider.hpp"
 
 int JsonTargetProvider::getTargetCount()
@@ -12,14 +12,14 @@ int JsonTargetProvider::getTargetCount()
 Coord* JsonTargetProvider::getTarget(int index)
 {
     if (items_.empty()) {
-        std::cerr << "Error: targets are not loaded\n";
+        ERROR("Targets are not loaded");
         return nullptr;
     }
 
     const auto target_index = static_cast<std::size_t>(index);
 
     if (index < 0 || target_index >= items_.size()) {
-        std::cerr << "Error: target index out of range\n";
+        ERROR("Target index out of range");
         return nullptr;
     }
 
@@ -30,7 +30,7 @@ JsonTargetProvider::JsonTargetProvider(const std::string config_path)
     : config_path_(config_path)
 {
     if (!loadConfig()) {
-        std::cerr << "Error: failed to load JSON target provider\n";
+        ERROR("Failed to load JSON target provider");
     }
 }
 
@@ -39,7 +39,7 @@ bool JsonTargetProvider::loadConfig()
     std::ifstream file(config_path_);
     if (!file.is_open())
     {
-        std::cerr << "Error: " << config_path_ << " file error\n";
+        ERROR(config_path_ << " file error");
         return false;
     }
 
@@ -47,7 +47,7 @@ bool JsonTargetProvider::loadConfig()
     try {
         file >> json_data;
     } catch (const json::parse_error& e) {
-        std::cerr << "Error: JSON parse error: " << e.what() << '\n';
+        ERROR("JSON parse error: " << e.what());
         return false;
     }
 
@@ -69,34 +69,34 @@ bool JsonTargetProvider::loadConfig()
         });
     }
 
-    std::cout << "Info: json target provider loaded" << std::endl;
+    LOG("JSON target provider loaded");
 
     return true;
 }
 
 auto JsonTargetProvider::validateCoordJson(const json& item, std::size_t index) -> bool {
     if (!item.is_object()) {
-        std::cerr << "Error: target at index " << index << " must be an object\n";
+        ERROR("Target at index " << index << " must be an object");
         return false;
     }
 
     if (!item.contains("x")) {
-        std::cerr << "Error: target at index " << index << " is missing field 'x'\n";
+        ERROR("Target at index " << index << " is missing field 'x'");
         return false;
     }
 
     if (!item.contains("y")) {
-        std::cerr << "Error: target at index " << index << " is missing field 'y'\n";
+        ERROR("Target at index " << index << " is missing field 'y'");
         return false;
     }
 
     if (!item.at("x").is_number()) {
-        std::cerr << "Error: field 'x' at index " << index << " must be a number\n";
+        ERROR("Field 'x' at index " << index << " must be a number");
         return false;
     }
 
     if (!item.at("y").is_number()) {
-        std::cerr << "Error: field 'y' at index " << index << " must be a number\n";
+        ERROR("Field 'y' at index " << index << " must be a number");
         return false;
     }
 
@@ -105,12 +105,12 @@ auto JsonTargetProvider::validateCoordJson(const json& item, std::size_t index) 
 
 auto JsonTargetProvider::validateTargetsJson(const json& json_data) -> bool {
     if (!json_data.is_array()) {
-        std::cerr << "Error: JSON root must be an array\n";
+        ERROR("JSON root must be an array");
         return false;
     }
 
     if (json_data.size() > kMaxTargets) {
-        std::cerr << "Error: too many targets. Max allowed: " << kMaxTargets << '\n';
+        ERROR("Too many targets. Max allowed: " << kMaxTargets);
         return false;
     }
 

@@ -1,7 +1,7 @@
-#include <iostream>
 #include <memory>
 #include <utility>
 
+#include "features/Logging.hpp"
 #include "features/MissionProcessor.hpp"
 
 MissionProcessor::MissionProcessor(
@@ -19,7 +19,7 @@ void MissionProcessor::init()
     // Load configuration
     if (!config_loader_->tryLoadConfig("data/config.json"))
     {
-        std::cerr << "Failed to load configuration\n";
+        ERROR("Failed to load configuration");
         return;
     }
 }
@@ -36,13 +36,13 @@ bool MissionProcessor::step(DropPoint* drop_point)
 
     Coord* target = target_provider_->getTarget(current_step_);
     if (target == nullptr) {
-        std::cerr << "Failed to get target at index " << current_step_ << '\n';
+        ERROR("Failed to get target at index " << current_step_);
         return false;
     }
 
     if (!solver_->trySolve(config_loader_->getConfig(), target,config_loader_->getAmmoParams(), drop_point))
     {
-        std::cerr << "Failed to solve for target at index " << current_step_ << '\n';
+        ERROR("Failed to solve for target at index " << current_step_);
         return false;
     }
 

@@ -1,5 +1,4 @@
 #include <fstream>
-#include <iostream>
 #include <string>
 
 #include "features/Logging.hpp"
@@ -35,7 +34,7 @@ bool JsonConfigLoader::tryLoadConfig(const std::string filename)
 
     if (!file)
     {
-        ERROR("Error: Invalid input format");
+        ERROR("Invalid input format");
         config_.reset();
         return false;
     }
@@ -66,7 +65,7 @@ bool JsonConfigLoader::tryLoadAmmoParams()
     auto it = ammoTable.find(config_->ammoName);
     if (it == ammoTable.end())
     {
-        ERROR("Error: Unknown ammo type: " + std::string(config_->ammoName));
+        ERROR("Unknown ammo type: " << config_->ammoName);
         return false;
     }
 
