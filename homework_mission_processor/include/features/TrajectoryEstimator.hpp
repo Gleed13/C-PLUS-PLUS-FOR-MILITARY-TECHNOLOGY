@@ -2,7 +2,7 @@
 
 #include <optional>
 
-#include "features/DroneMovementController.hpp"
+#include "features/DroneMotionProfile.hpp"
 #include "models/Coord.hpp"
 #include "models/DroneConfig.hpp"
 #include "models/DroneState.hpp"
@@ -11,6 +11,9 @@
 class TrajectoryEstimator final
 {
 public:
+    explicit TrajectoryEstimator(
+        const DroneMotionProfile& motion_profile);
+
     std::optional<float> estimateArrivalTime(
         const DroneState& drone,
         const Coord& target_position,
@@ -18,7 +21,7 @@ public:
         const DroneConfig& config) const;
 
 private:
-    DroneMovementController movement_controller_;
+    const DroneMotionProfile& motion_profile_;
 
     static float angleToTarget(
         const Coord& position,

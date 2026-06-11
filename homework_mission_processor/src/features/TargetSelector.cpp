@@ -4,6 +4,13 @@
 
 #include "features/TargetSelector.hpp"
 
+TargetSelector::TargetSelector(
+    const DroneMotionProfile& motion_profile)
+    : motion_profile_(motion_profile),
+      trajectory_estimator_(motion_profile)
+{
+}
+
 std::optional<TargetSelection> TargetSelector::select(
     const DroneState& drone,
     float simulation_time,
@@ -47,7 +54,7 @@ std::optional<TargetSelection> TargetSelector::select(
             target_position->x - drone.position.x,
             target_position->y - drone.position.y);
         const float remaining_acceleration_path =
-            movement_controller_.remainingAccelerationPath(drone, config);
+            motion_profile_.remainingAccelerationPath(drone.speed);
         const bool needs_intermediate_point =
             ballistic_solution->horizontalDistance +
                 remaining_acceleration_path -

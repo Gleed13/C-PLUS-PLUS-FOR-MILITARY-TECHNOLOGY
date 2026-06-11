@@ -1,5 +1,6 @@
 #pragma once
 
+#include "features/DroneMotionProfile.hpp"
 #include "models/DroneConfig.hpp"
 #include "models/DroneState.hpp"
 #include "models/DropPoint.hpp"
@@ -7,20 +8,19 @@
 class DroneMovementController final
 {
 public:
+    explicit DroneMovementController(
+        const DroneMotionProfile& motion_profile);
+
+    bool init(const DroneConfig& config);
+
     bool update(
         DroneState& drone,
-        const DropPoint& destination,
-        const DroneConfig& config) const;
-
-    float remainingAccelerationPath(
-        const DroneState& drone,
-        const DroneConfig& config) const;
-    float remainingDecelerationPath(
-        const DroneState& drone,
-        const DroneConfig& config) const;
+        const DropPoint& destination) const;
 
 private:
-    static float calculateAcceleration(const DroneConfig& config);
+    const DroneMotionProfile& motion_profile_;
+    const DroneConfig* config_ = nullptr;
+
     static float angleToTarget(
         const DroneState& drone,
         const Coord& target_position);

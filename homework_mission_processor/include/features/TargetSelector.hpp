@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include "features/DroneMotionProfile.hpp"
 #include "features/TrajectoryEstimator.hpp"
 #include "interfaces/IBallisticSolver.hpp"
 #include "interfaces/ITargetProvider.hpp"
@@ -13,6 +14,9 @@
 class TargetSelector final
 {
 public:
+    explicit TargetSelector(
+        const DroneMotionProfile& motion_profile);
+
     std::optional<TargetSelection> select(
         const DroneState& drone,
         float simulation_time,
@@ -22,6 +26,6 @@ public:
         IBallisticSolver& ballistic_solver) const;
 
 private:
-    DroneMovementController movement_controller_;
+    const DroneMotionProfile& motion_profile_;
     TrajectoryEstimator trajectory_estimator_;
 };

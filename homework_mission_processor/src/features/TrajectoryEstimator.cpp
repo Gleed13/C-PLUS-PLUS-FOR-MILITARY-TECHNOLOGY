@@ -4,6 +4,12 @@
 
 #include "features/TrajectoryEstimator.hpp"
 
+TrajectoryEstimator::TrajectoryEstimator(
+    const DroneMotionProfile& motion_profile)
+    : motion_profile_(motion_profile)
+{
+}
+
 std::optional<float> TrajectoryEstimator::estimateArrivalTime(
     const DroneState& drone,
     const Coord& target_position,
@@ -17,9 +23,7 @@ std::optional<float> TrajectoryEstimator::estimateArrivalTime(
         return std::nullopt;
     }
 
-    const float acceleration =
-        config.attackSpeed * config.attackSpeed /
-        (2.0F * config.accelPath);
+    const float acceleration = motion_profile_.acceleration();
     if (!std::isfinite(acceleration) || acceleration <= 0.0F) {
         return std::nullopt;
     }
@@ -27,9 +31,9 @@ std::optional<float> TrajectoryEstimator::estimateArrivalTime(
     DroneState estimated_drone = drone;
     float total_time = 0.0F;
     float remaining_acceleration_path =
-        movement_controller_.remainingAccelerationPath(estimated_drone, config);
+        motion_profile_.remainingAccelerationPath(estimated_drone.speed);
     float remaining_deceleration_path =
-        movement_controller_.remainingDecelerationPath(estimated_drone, config);
+        motion_profile_.remainingDecelerationPath(estimated_drone.speed);
 
     if (drop_point.intermPoint.has_value()) {
         const Coord intermediate_point = drop_point.intermPoint.value();
@@ -108,9 +112,7 @@ std::optional<float> TrajectoryEstimator::estimateArrivalTime(
         acceleration;
 
     remaining_acceleration_path =
-        movement_controller_.remainingAccelerationPath(
-            estimated_drone,
-            config);
+        motion_profile_.remainingAccelerationPath(estimated_drone.speed);
     const float distance_to_target =
         distance(estimated_drone.position, target_position);
     total_time +=

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <memory>
 
+#include "features/DroneMotionProfile.hpp"
 #include "features/DroneMovementController.hpp"
 #include "features/TargetSelector.hpp"
 #include "interfaces/IBallisticSolver.hpp"
@@ -36,6 +37,7 @@ private:
     std::unique_ptr<ITargetProvider> target_provider_;
     std::unique_ptr<IBallisticSolver> solver_;
 
+    DroneMotionProfile motion_profile_;
     DroneMovementController movement_controller_;
     TargetSelector target_selector_;
     DroneState drone_;

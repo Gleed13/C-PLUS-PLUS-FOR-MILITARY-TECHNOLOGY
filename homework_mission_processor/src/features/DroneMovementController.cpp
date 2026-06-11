@@ -4,16 +4,44 @@
 #include "features/Logging.hpp"
 #include "features/DroneMovementController.hpp"
 
-bool DroneMovementController::update(
-    DroneState& drone,
-    const DropPoint& destination,
-    const DroneConfig& config) const
+DroneMovementController::DroneMovementController(
+    const DroneMotionProfile& motion_profile)
+    : motion_profile_(motion_profile)
 {
-    const float acceleration = calculateAcceleration(config);
-    if (!std::isfinite(acceleration) || acceleration <= 0.0F) {
+}
+
+bool DroneMovementController::init(const DroneConfig& config)
+{
+    if (config.attackSpeed <= 0.0F ||
+        config.accelPath <= 0.0F ||
+        config.simTimeStep <= 0.0F ||
+        config.angularSpeed < 0.0F ||
+        config.turnThreshold < 0.0F) {
         ERROR("Invalid drone movement configuration");
+        config_ = nullptr;
         return false;
     }
+
+    if (motion_profile_.acceleration() <= 0.0F) {
+        ERROR("Drone motion profile is not initialized");
+        config_ = nullptr;
+        return false;
+    }
+
+    config_ = &config;
+    return true;
+}
+
+bool DroneMovementController::update(
+    DroneState& drone,
+    const DropPoint& destination) const
+{
+    if (config_ == nullptr) {
+        ERROR("Drone movement controller is not initialized");
+        return false;
+    }
+    const DroneConfig& config = *config_;
+    const float acceleration = motion_profile_.acceleration();
 
     const Coord target_position = destination.intermPoint.value_or(destination.firePoint);
     const float target_angle = angleToTarget(drone, target_position);
@@ -37,7 +65,7 @@ bool DroneMovementController::update(
                 decelerate(drone, config, acceleration);
             } else if (destination.intermPoint.has_value()) {
                 const float distance_to_intermediate = distance(drone.position, target_position);
-                if (distance_to_intermediate <= remainingDecelerationPath(drone, config)) {
+                if (distance_to_intermediate <= motion_profile_.remainingDecelerationPath(drone.speed)) {
                     decelerate(drone, config, acceleration);
                 } else {
                     accelerate(drone, config, acceleration);
@@ -65,43 +93,6 @@ bool DroneMovementController::update(
 
     updatePosition(drone, config);
     return true;
-}
-
-float DroneMovementController::remainingAccelerationPath(
-    const DroneState& drone,
-    const DroneConfig& config) const
-{
-    if (config.attackSpeed <= 0.0F || config.accelPath <= 0.0F || drone.speed >= config.attackSpeed) {
-        return 0.0F;
-    }
-
-    const float speed_ratio = drone.speed / config.attackSpeed;
-    return config.accelPath - config.accelPath * speed_ratio * speed_ratio;
-}
-
-float DroneMovementController::remainingDecelerationPath(
-    const DroneState& drone,
-    const DroneConfig& config) const
-{
-    if (config.attackSpeed <= 0.0F || config.accelPath <= 0.0F || drone.speed <= 0.0F) {
-        return 0.0F;
-    }
-
-    const float speed_ratio = drone.speed / config.attackSpeed;
-    return config.accelPath * speed_ratio * speed_ratio;
-}
-
-float DroneMovementController::calculateAcceleration(const DroneConfig& config)
-{
-    if (config.attackSpeed <= 0.0F ||
-        config.accelPath <= 0.0F ||
-        config.simTimeStep <= 0.0F ||
-        config.angularSpeed < 0.0F ||
-        config.turnThreshold < 0.0F) {
-        return 0.0F;
-    }
-
-    return config.attackSpeed * config.attackSpeed / (2.0F * config.accelPath);
 }
 
 float DroneMovementController::angleToTarget(

@@ -13,7 +13,9 @@ MissionProcessor::MissionProcessor(
     std::unique_ptr<IBallisticSolver> solver)
     : config_loader_(std::move(config_loader)),
       target_provider_(std::move(target_provider)),
-      solver_(std::move(solver))
+      solver_(std::move(solver)),
+      movement_controller_(motion_profile_),
+      target_selector_(motion_profile_)
 {
 }
 
@@ -29,6 +31,12 @@ bool MissionProcessor::init()
     const DroneConfig* config = config_loader_->getConfig();
     if (config == nullptr || config_loader_->getAmmoParams() == nullptr) {
         ERROR("Configuration loader returned incomplete data");
+        initialized_ = false;
+        return false;
+    }
+    if (!motion_profile_.init(*config) ||
+        !movement_controller_.init(*config)) {
+        ERROR("Failed to initialize simulation features");
         initialized_ = false;
         return false;
     }
@@ -164,7 +172,7 @@ MissionProcessor::StepOutcome MissionProcessor::runStep(
         predicted_target->x - drone_.position.x,
         predicted_target->y - drone_.position.y);
     const float remaining_acceleration_path =
-        movement_controller_.remainingAccelerationPath(drone_, config);
+        motion_profile_.remainingAccelerationPath(drone_.speed);
     const bool needs_intermediate_point =
         predicted_solution->horizontalDistance +
             remaining_acceleration_path -
@@ -187,8 +195,7 @@ MissionProcessor::StepOutcome MissionProcessor::runStep(
 
     if (!movement_controller_.update(
             drone_,
-            predicted_solution->dropPoint,
-            config)) {
+            predicted_solution->dropPoint)) {
         ERROR("Failed to update drone movement at simulation step " << step_index);
         return StepOutcome::Failed;
     }
