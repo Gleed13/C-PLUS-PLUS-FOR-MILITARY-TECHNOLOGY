@@ -53,16 +53,18 @@ bool AnalyticalBallisticSolver::tryCalculateFreeFallTime(float zd, float attackS
         return false;
     }
 
-    float phiArg = 3 * q / (2 * p) * sqrt(-3 / p);
+    float phiArg = 3 * q / (2 * p) * std::sqrt(-3.0F / p);
     if (phiArg < -1.0f || phiArg > 1.0f) {
         ERROR("acos argument is out of bounds: " << phiArg);
         return false;
     }
 
-    float phi = acos(phiArg);
+    float phi = std::acos(phiArg);
     DEBUG("phi (angle for cosine solution): " << phi << " radians");
 
-    *t = 2 * sqrt(-p / 3) * cos((phi + 4 * M_PI) / 3) - b / (3 * a);
+    *t = 2 * std::sqrt(-p / 3) *
+             std::cos((phi + 4 * static_cast<float>(M_PI)) / 3) -
+         b / (3 * a);
     DEBUG("Projectile's free-fall time: " << *t << " seconds");
     if (*t <= 0) {
         ERROR("Non-positive time to target: " << *t << " seconds");
@@ -79,8 +81,8 @@ bool AnalyticalBallisticSolver::tryCalculateHorizontalDistance(float t, float at
     float t3 = t * t * t * (6 * drag * kGravity * lift * mass - 6 * drag * drag * (lift * lift - 1) * attackSpeed) / (36 * mass * mass);
     float t4 = t * t * t * t *
                (-6 * drag * drag * kGravity * lift * (1 + lift * lift + lift * lift * lift * lift) * mass +
-                3 * drag * drag * drag * kGravity * lift * lift * (1 + lift * lift) * attackSpeed +
-                6 * drag * drag * drag * kGravity * lift * lift * lift * lift * (1 + lift * lift) * attackSpeed) /
+                3 * drag * drag * drag * lift * lift * (1 + lift * lift) * attackSpeed +
+                6 * drag * drag * drag * lift * lift * lift * lift * (1 + lift * lift) * attackSpeed) /
                (36 * (1 + lift * lift) * (1 + lift * lift) * mass * mass * mass);
     float t5 = t * t * t * t * t *
                (3 * drag * drag * drag * kGravity * lift * lift * lift * mass -
@@ -100,7 +102,7 @@ bool AnalyticalBallisticSolver::tryCalculateHorizontalDistance(float t, float at
 bool AnalyticalBallisticSolver::tryCalculateDropPoint(
     float xd, float yd, float xt, float yt, float accelerationPath, float h, DropPoint* dropPoint)
 {
-    float distanceToTarget = sqrt((xt - xd) * (xt - xd) + (yt - yd) * (yt - yd));
+    float distanceToTarget = std::sqrt((xt - xd) * (xt - xd) + (yt - yd) * (yt - yd));
     DEBUG("Distance to target: " << distanceToTarget << " meters");
     if (distanceToTarget <= 0) {
         ERROR("Non-positive distance to target: " << distanceToTarget << " meters");
@@ -116,7 +118,7 @@ bool AnalyticalBallisticSolver::tryCalculateDropPoint(
     else {
         dropPoint->intermPoint = std::nullopt;
     }
-    dropPoint->firePoint = Coord{xd + (xt - xd) * ratio, yd + (yt - yd) * ratio};
+    dropPoint->firePoint = Coord{xt - (xt - xd) * ratio, yt - (yt - yd) * ratio};
 
     return true;
 }

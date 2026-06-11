@@ -39,6 +39,7 @@ bool MissionProcessor::init()
         .speed = 0.0F,
         .status = DroneStatus::Stopped
     };
+    current_target_index_ = -1;
     initialized_ = true;
     return true;
 }
@@ -55,9 +56,32 @@ SimulationResult MissionProcessor::run(std::size_t max_steps)
     const Ammo& ammo = *config_loader_->getAmmoParams();
     result.steps.reserve(max_steps);
 
+    const auto initial_target = target_provider_->getPosition(
+        0,
+        0.0F,
+        config.arrayTimeStep);
+    if (!initial_target.has_value()) {
+        ERROR("Failed to load the initial target position");
+        return result;
+    }
+
+    const auto initial_ballistic_solution = solver_->solve(
+        config,
+        initial_target.value(),
+        ammo);
+    if (!initial_ballistic_solution.has_value()) {
+        ERROR("Failed to calculate initial ballistic parameters");
+        return result;
+    }
+
     for (std::size_t step_index = 0; step_index < max_steps; ++step_index) {
         SimulationStep step;
         step.drone = drone_;
+        step.targetIndex = current_target_index_;
+        step.aimPoint =
+            drone_.position +
+            directionVector(drone_.direction) *
+                initial_ballistic_solution->horizontalDistance;
 
         if (step_index == 0) {
             result.steps.push_back(step);
@@ -78,6 +102,7 @@ SimulationResult MissionProcessor::run(std::size_t max_steps)
             result.outcome = SimulationOutcome::Failed;
             return result;
         }
+        current_target_index_ = static_cast<int>(selection->targetIndex);
 
         DroneConfig current_config = config;
         current_config.startPos = drone_.position;
@@ -127,12 +152,7 @@ SimulationResult MissionProcessor::run(std::size_t max_steps)
             predicted_solution->dropPoint.intermPoint.reset();
         }
 
-        step.targetIndex = static_cast<int>(selection->targetIndex);
         step.dropPoint = predicted_solution->dropPoint.firePoint;
-        step.aimPoint =
-            drone_.position +
-            directionVector(drone_.direction) *
-                predicted_solution->horizontalDistance;
         step.predictedTarget = predicted_target.value();
         result.steps.push_back(step);
 
@@ -171,6 +191,7 @@ void MissionProcessor::reset()
         .speed = 0.0F,
         .status = DroneStatus::Stopped
     };
+    current_target_index_ = -1;
 }
 
 void MissionProcessor::changeSolver(std::unique_ptr<IBallisticSolver> new_solver)

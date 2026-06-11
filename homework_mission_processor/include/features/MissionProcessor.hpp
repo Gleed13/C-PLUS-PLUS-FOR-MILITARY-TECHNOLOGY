@@ -33,6 +33,7 @@ private:
     TargetSelector target_selector_;
     DroneState drone_;
     bool initialized_ = false;
+    int current_target_index_ = -1;
 
     std::optional<Coord> predictTargetPosition(
         std::size_t target_index,
