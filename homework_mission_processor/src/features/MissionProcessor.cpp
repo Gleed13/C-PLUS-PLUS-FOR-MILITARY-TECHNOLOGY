@@ -216,6 +216,7 @@ void MissionProcessor::reset()
         .speed = 0.0F,
         .status = DroneStatus::Stopped
     };
+    movement_controller_.reset();
     current_target_index_ = -1;
 }
 
