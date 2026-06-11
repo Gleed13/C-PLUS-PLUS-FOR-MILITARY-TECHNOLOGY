@@ -75,100 +75,17 @@ SimulationResult MissionProcessor::run(std::size_t max_steps)
     }
 
     for (std::size_t step_index = 0; step_index < max_steps; ++step_index) {
-        SimulationStep step;
-        step.drone = drone_;
-        step.targetIndex = current_target_index_;
-        step.aimPoint =
-            drone_.position +
-            directionVector(drone_.direction) *
-                initial_ballistic_solution->horizontalDistance;
-
-        if (step_index == 0) {
-            result.steps.push_back(step);
-            continue;
-        }
-
-        const float simulation_time =
-            static_cast<float>(step_index) * config.simTimeStep;
-        const auto selection = target_selector_.select(
-            drone_,
-            simulation_time,
+        const StepOutcome step_outcome = runStep(
+            step_index,
             config,
             ammo,
-            *target_provider_,
-            *solver_);
-        if (!selection.has_value()) {
-            ERROR("Failed to select a target at simulation step " << step_index);
-            result.outcome = SimulationOutcome::Failed;
-            return result;
-        }
-        current_target_index_ = static_cast<int>(selection->targetIndex);
-
-        DroneConfig current_config = config;
-        current_config.startPos = drone_.position;
-        current_config.initialDir = drone_.direction;
-
-        const auto current_solution = solver_->solve(
-            current_config,
-            selection->predictedPosition,
-            ammo);
-        if (!current_solution.has_value()) {
-            ERROR("Failed to calculate initial ballistic solution at simulation step " << step_index);
-            result.outcome = SimulationOutcome::Failed;
-            return result;
-        }
-
-        const auto predicted_target = predictTargetPosition(
-            selection->targetIndex,
-            simulation_time,
-            current_solution->fallTime);
-        if (!predicted_target.has_value()) {
-            ERROR("Failed to predict target position at simulation step " << step_index);
-            result.outcome = SimulationOutcome::Failed;
-            return result;
-        }
-
-        auto predicted_solution = solver_->solve(
-            current_config,
-            predicted_target.value(),
-            ammo);
-        if (!predicted_solution.has_value()) {
-            ERROR("Failed to calculate predicted ballistic solution at simulation step " << step_index);
-            result.outcome = SimulationOutcome::Failed;
-            return result;
-        }
-
-        const float distance_to_predicted_target = std::hypot(
-            predicted_target->x - drone_.position.x,
-            predicted_target->y - drone_.position.y);
-        const float remaining_acceleration_path =
-            movement_controller_.remainingAccelerationPath(drone_, config);
-        const bool needs_intermediate_point =
-            predicted_solution->horizontalDistance +
-                remaining_acceleration_path -
-                config.hitRadius * kHitRadiusCoefficient >
-            distance_to_predicted_target;
-        if (!needs_intermediate_point) {
-            predicted_solution->dropPoint.intermPoint.reset();
-        }
-
-        step.dropPoint = predicted_solution->dropPoint.firePoint;
-        step.predictedTarget = predicted_target.value();
-        result.steps.push_back(step);
-
-        if (isInFireRange(
-                predicted_target.value(),
-                predicted_solution->horizontalDistance,
-                config)) {
+            initial_ballistic_solution->horizontalDistance,
+            result);
+        if (step_outcome == StepOutcome::TargetReached) {
             result.outcome = SimulationOutcome::TargetReached;
             return result;
         }
-
-        if (!movement_controller_.update(
-                drone_,
-                predicted_solution->dropPoint,
-                config)) {
-            ERROR("Failed to update drone movement at simulation step " << step_index);
+        if (step_outcome == StepOutcome::Failed) {
             result.outcome = SimulationOutcome::Failed;
             return result;
         }
@@ -176,6 +93,107 @@ SimulationResult MissionProcessor::run(std::size_t max_steps)
 
     result.outcome = SimulationOutcome::MaxStepsReached;
     return result;
+}
+
+MissionProcessor::StepOutcome MissionProcessor::runStep(
+    std::size_t step_index,
+    const DroneConfig& config,
+    const Ammo& ammo,
+    float initial_horizontal_distance,
+    SimulationResult& result)
+{
+    SimulationStep step;
+    step.drone = drone_;
+    step.targetIndex = current_target_index_;
+    step.aimPoint =
+        drone_.position +
+        directionVector(drone_.direction) * initial_horizontal_distance;
+
+    if (step_index == 0) {
+        result.steps.push_back(step);
+        return StepOutcome::Continue;
+    }
+
+    const float simulation_time =
+        static_cast<float>(step_index) * config.simTimeStep;
+    const auto selection = target_selector_.select(
+        drone_,
+        simulation_time,
+        config,
+        ammo,
+        *target_provider_,
+        *solver_);
+    if (!selection.has_value()) {
+        ERROR("Failed to select a target at simulation step " << step_index);
+        return StepOutcome::Failed;
+    }
+    current_target_index_ = static_cast<int>(selection->targetIndex);
+
+    DroneConfig current_config = config;
+    current_config.startPos = drone_.position;
+    current_config.initialDir = drone_.direction;
+
+    const auto current_solution = solver_->solve(
+        current_config,
+        selection->predictedPosition,
+        ammo);
+    if (!current_solution.has_value()) {
+        ERROR("Failed to calculate initial ballistic solution at simulation step " << step_index);
+        return StepOutcome::Failed;
+    }
+
+    const auto predicted_target = predictTargetPosition(
+        selection->targetIndex,
+        simulation_time,
+        current_solution->fallTime);
+    if (!predicted_target.has_value()) {
+        ERROR("Failed to predict target position at simulation step " << step_index);
+        return StepOutcome::Failed;
+    }
+
+    auto predicted_solution = solver_->solve(
+        current_config,
+        predicted_target.value(),
+        ammo);
+    if (!predicted_solution.has_value()) {
+        ERROR("Failed to calculate predicted ballistic solution at simulation step " << step_index);
+        return StepOutcome::Failed;
+    }
+
+    const float distance_to_predicted_target = std::hypot(
+        predicted_target->x - drone_.position.x,
+        predicted_target->y - drone_.position.y);
+    const float remaining_acceleration_path =
+        movement_controller_.remainingAccelerationPath(drone_, config);
+    const bool needs_intermediate_point =
+        predicted_solution->horizontalDistance +
+            remaining_acceleration_path -
+            config.hitRadius * kHitRadiusCoefficient >
+        distance_to_predicted_target;
+    if (!needs_intermediate_point) {
+        predicted_solution->dropPoint.intermPoint.reset();
+    }
+
+    step.dropPoint = predicted_solution->dropPoint.firePoint;
+    step.predictedTarget = predicted_target.value();
+    result.steps.push_back(step);
+
+    if (isInFireRange(
+            predicted_target.value(),
+            predicted_solution->horizontalDistance,
+            config)) {
+        return StepOutcome::TargetReached;
+    }
+
+    if (!movement_controller_.update(
+            drone_,
+            predicted_solution->dropPoint,
+            config)) {
+        ERROR("Failed to update drone movement at simulation step " << step_index);
+        return StepOutcome::Failed;
+    }
+
+    return StepOutcome::Continue;
 }
 
 void MissionProcessor::reset()

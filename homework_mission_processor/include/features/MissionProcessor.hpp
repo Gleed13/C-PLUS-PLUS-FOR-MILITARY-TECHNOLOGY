@@ -25,6 +25,13 @@ public:
 private:
     static constexpr float kHitRadiusCoefficient = 0.5F;
 
+    enum class StepOutcome
+    {
+        Continue,
+        TargetReached,
+        Failed
+    };
+
     std::unique_ptr<IConfigLoader> config_loader_;
     std::unique_ptr<ITargetProvider> target_provider_;
     std::unique_ptr<IBallisticSolver> solver_;
@@ -35,6 +42,12 @@ private:
     bool initialized_ = false;
     int current_target_index_ = -1;
 
+    StepOutcome runStep(
+        std::size_t step_index,
+        const DroneConfig& config,
+        const Ammo& ammo,
+        float initial_horizontal_distance,
+        SimulationResult& result);
     std::optional<Coord> predictTargetPosition(
         std::size_t target_index,
         float simulation_time,
