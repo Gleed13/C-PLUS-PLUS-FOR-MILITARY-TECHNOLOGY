@@ -1,6 +1,6 @@
 {
   "C_Cpp.intelliSenseEngine": "disabled",
   "clangd.arguments": [
-    "--compile-commands-dir=${workspaceFolder}/homework_06/build"
+    "--compile-commands-dir=${workspaceFolder}/homework_07/build"
   ]
 }

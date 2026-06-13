@@ -18,6 +18,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_subdirectory(homework_04)
 add_subdirectory(homework_05)
 add_subdirectory(homework_06)
+add_subdirectory(homework_07)
 
 if(NOT CMAKE_CROSSCOMPILING)
   enable_testing()
