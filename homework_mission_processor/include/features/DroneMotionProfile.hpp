@@ -2,8 +2,7 @@
 
 #include "models/DroneConfig.hpp"
 
-class DroneMotionProfile final
-{
+class DroneMotionProfile final {
 public:
     bool init(const DroneConfig& config);
 

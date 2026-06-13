@@ -9,9 +9,6 @@
 
 class IBallisticSolver {
 public:
-    virtual std::optional<BallisticSolution> solve(
-        const DroneConfig& drone_config,
-        const Coord& target_position,
-        const Ammo& ammo) = 0;
+    virtual std::optional<BallisticSolution> solve(const DroneConfig& drone_config, const Coord& target_position, const Ammo& ammo) = 0;
     virtual ~IBallisticSolver() = default;
 };

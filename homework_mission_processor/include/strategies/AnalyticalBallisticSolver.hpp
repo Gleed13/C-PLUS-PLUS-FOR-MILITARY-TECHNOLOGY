@@ -8,10 +8,7 @@ class AnalyticalBallisticSolver : public IBallisticSolver {
 public:
     const float kGravity = 9.81f;
 
-    std::optional<BallisticSolution> solve(
-        const DroneConfig& drone_config,
-        const Coord& target_position,
-        const Ammo& ammo) override;
+    std::optional<BallisticSolution> solve(const DroneConfig& drone_config, const Coord& target_position, const Ammo& ammo) override;
 
 private:
     bool tryCalculateFreeFallTime(float zd, float attackSpeed, float mass, float drag, float lift, float* t);

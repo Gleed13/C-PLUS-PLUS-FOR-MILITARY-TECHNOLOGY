@@ -9,9 +9,7 @@ bool DroneMotionProfile::init(const DroneConfig& config)
         return false;
     }
 
-    const float acceleration =
-        config.attackSpeed * config.attackSpeed /
-        (2.0F * config.accelPath);
+    const float acceleration = config.attackSpeed * config.attackSpeed / (2.0F * config.accelPath);
     if (!std::isfinite(acceleration) || acceleration <= 0.0F) {
         initialized_ = false;
         return false;
@@ -36,8 +34,7 @@ float DroneMotionProfile::remainingAccelerationPath(float speed) const
     }
 
     const float speed_ratio = speed / attack_speed_;
-    return acceleration_path_ -
-        acceleration_path_ * speed_ratio * speed_ratio;
+    return acceleration_path_ - acceleration_path_ * speed_ratio * speed_ratio;
 }
 
 float DroneMotionProfile::remainingDecelerationPath(float speed) const

@@ -11,19 +11,16 @@
 #include "models/DroneState.hpp"
 #include "models/TargetSelection.hpp"
 
-class TargetSelector final
-{
+class TargetSelector final {
 public:
-    explicit TargetSelector(
-        const DroneMotionProfile& motion_profile);
+    explicit TargetSelector(const DroneMotionProfile& motion_profile);
 
-    std::optional<TargetSelection> select(
-        const DroneState& drone,
-        float simulation_time,
-        const DroneConfig& config,
-        const Ammo& ammo,
-        const ITargetProvider& target_provider,
-        IBallisticSolver& ballistic_solver) const;
+    std::optional<TargetSelection> select(const DroneState& drone,
+                                          float simulation_time,
+                                          const DroneConfig& config,
+                                          const Ammo& ammo,
+                                          const ITargetProvider& target_provider,
+                                          IBallisticSolver& ballistic_solver) const;
 
 private:
     const DroneMotionProfile& motion_profile_;

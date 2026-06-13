@@ -4,15 +4,9 @@
 
 #include "SimulationStep.hpp"
 
-enum class SimulationOutcome
-{
-    TargetReached,
-    MaxStepsReached,
-    Failed
-};
+enum class SimulationOutcome { TargetReached, MaxStepsReached, Failed };
 
-struct SimulationResult
-{
+struct SimulationResult {
     SimulationOutcome outcome = SimulationOutcome::Failed;
     std::vector<SimulationStep> steps;
 };

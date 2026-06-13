@@ -7,9 +7,7 @@
 namespace {
 
 template <typename State>
-std::unique_ptr<IDroneState> transitionTo(
-    DroneMovementContext& context,
-    DroneStatus next_status)
+std::unique_ptr<IDroneState> transitionTo(DroneMovementContext& context, DroneStatus next_status)
 {
     if (context.drone.status == next_status) {
         return nullptr;
@@ -29,14 +27,10 @@ std::unique_ptr<IDroneState> accelerate(DroneMovementContext& context)
     context.drone.speed += context.motionProfile.acceleration() * context.config.simTimeStep;
     if (context.drone.speed >= context.config.attackSpeed) {
         context.drone.speed = context.config.attackSpeed;
-        return transitionTo<StateMoving>(
-            context,
-            DroneStatus::Moving);
+        return transitionTo<StateMoving>(context, DroneStatus::Moving);
     }
 
-    return transitionTo<StateAccelerating>(
-        context,
-        DroneStatus::Accelerating);
+    return transitionTo<StateAccelerating>(context, DroneStatus::Accelerating);
 }
 
 std::unique_ptr<IDroneState> decelerate(DroneMovementContext& context)
@@ -44,14 +38,10 @@ std::unique_ptr<IDroneState> decelerate(DroneMovementContext& context)
     context.drone.speed -= context.motionProfile.acceleration() * context.config.simTimeStep;
     if (context.drone.speed <= 0.0F) {
         context.drone.speed = 0.0F;
-        return transitionTo<StateStopped>(
-            context,
-            DroneStatus::Stopped);
+        return transitionTo<StateStopped>(context, DroneStatus::Stopped);
     }
 
-    return transitionTo<StateDecelerating>(
-        context,
-        DroneStatus::Decelerating);
+    return transitionTo<StateDecelerating>(context, DroneStatus::Decelerating);
 }
 
 std::unique_ptr<IDroneState> turnOrAccelerate(DroneMovementContext& context)
@@ -60,9 +50,7 @@ std::unique_ptr<IDroneState> turnOrAccelerate(DroneMovementContext& context)
         const float direction_sign = context.targetAngle > 0.0F ? 1.0F : -1.0F;
         context.drone.direction +=
             direction_sign * std::min(context.config.angularSpeed * context.config.simTimeStep, std::abs(context.targetAngle));
-        return transitionTo<StateTurning>(
-            context,
-            DroneStatus::Turning);
+        return transitionTo<StateTurning>(context, DroneStatus::Turning);
     }
 
     return accelerate(context);

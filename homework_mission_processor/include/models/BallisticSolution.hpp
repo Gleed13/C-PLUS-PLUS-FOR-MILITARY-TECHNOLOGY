@@ -2,8 +2,7 @@
 
 #include "DropPoint.hpp"
 
-struct BallisticSolution
-{
+struct BallisticSolution {
     DropPoint dropPoint{};
     float fallTime = 0.0F;
     float horizontalDistance = 0.0F;

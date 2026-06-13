@@ -9,22 +9,17 @@
 int main(int argc, char** argv)
 {
     if (argc < 4 || argc > 5) {
-        ERROR(
-            "Usage: " << argv[0]
-                      << " <config_input_file> <targets_input_file> <ballistic_table_file>"
-                         " [simulation_output_file]");
+        ERROR("Usage: " << argv[0]
+                        << " <config_input_file> <targets_input_file> <ballistic_table_file>"
+                           " [simulation_output_file]");
         return 1;
     }
 
     const std::string output_path = argc == 5 ? argv[4] : "simulation.json";
     auto loader = StrategyFactory::createLoader(StrategyFactory::LoaderType::JSON);
     auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::JSON, argv[2]);
-    auto solver = StrategyFactory::createSolver(
-        StrategyFactory::SolverType::TABLE,
-        argv[3]);
-    if (loader == nullptr ||
-        provider == nullptr ||
-        solver == nullptr) {
+    auto solver = StrategyFactory::createSolver(StrategyFactory::SolverType::TABLE, argv[3]);
+    if (loader == nullptr || provider == nullptr || solver == nullptr) {
         ERROR("Failed to create processing strategies");
         return 1;
     }

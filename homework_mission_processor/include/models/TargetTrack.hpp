@@ -4,7 +4,6 @@
 
 #include "Coord.hpp"
 
-struct TargetTrack
-{
+struct TargetTrack {
     std::vector<Coord> positions;
 };

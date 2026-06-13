@@ -15,10 +15,9 @@
 
 class MissionProcessor final {
 public:
-    MissionProcessor(
-        std::unique_ptr<IConfigLoader> config_loader,
-        std::unique_ptr<ITargetProvider> target_provider,
-        std::unique_ptr<IBallisticSolver> solver);
+    MissionProcessor(std::unique_ptr<IConfigLoader> config_loader,
+                     std::unique_ptr<ITargetProvider> target_provider,
+                     std::unique_ptr<IBallisticSolver> solver);
     bool init(const std::string& config_path);
     SimulationResult run(std::size_t max_steps = 10000);
     void reset();
@@ -27,12 +26,7 @@ public:
 private:
     static constexpr float kHitRadiusCoefficient = 0.5F;
 
-    enum class StepOutcome
-    {
-        Continue,
-        TargetReached,
-        Failed
-    };
+    enum class StepOutcome { Continue, TargetReached, Failed };
 
     std::unique_ptr<IConfigLoader> config_loader_;
     std::unique_ptr<ITargetProvider> target_provider_;
@@ -46,18 +40,8 @@ private:
     int current_target_index_ = -1;
 
     StepOutcome runStep(
-        std::size_t step_index,
-        const DroneConfig& config,
-        const Ammo& ammo,
-        float initial_horizontal_distance,
-        SimulationResult& result);
-    std::optional<Coord> predictTargetPosition(
-        std::size_t target_index,
-        float simulation_time,
-        float fall_time) const;
-    bool isInFireRange(
-        const Coord& predicted_target,
-        float horizontal_distance,
-        const DroneConfig& config) const;
+        std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float initial_horizontal_distance, SimulationResult& result);
+    std::optional<Coord> predictTargetPosition(std::size_t target_index, float simulation_time, float fall_time) const;
+    bool isInFireRange(const Coord& predicted_target, float horizontal_distance, const DroneConfig& config) const;
     static Coord directionVector(float direction);
 };

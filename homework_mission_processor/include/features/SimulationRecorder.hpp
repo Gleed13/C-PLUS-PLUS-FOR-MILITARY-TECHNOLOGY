@@ -4,10 +4,7 @@
 
 #include "models/SimulationResult.hpp"
 
-class SimulationRecorder final
-{
+class SimulationRecorder final {
 public:
-    bool writeJson(
-        const SimulationResult& result,
-        const std::string& output_path) const;
+    bool writeJson(const SimulationResult& result, const std::string& output_path) const;
 };

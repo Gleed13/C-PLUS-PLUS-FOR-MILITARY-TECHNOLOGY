@@ -8,8 +8,7 @@ bool JsonConfigLoader::tryLoadConfig(const std::string filename)
 {
     std::ifstream file(filename);
 
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         ERROR("File error");
         return false;
     }
@@ -32,15 +31,13 @@ bool JsonConfigLoader::tryLoadConfig(const std::string filename)
     config_->hitRadius = j["simulation"]["hitRadius"];
     config_->arrayTimeStep = j["targetArrayTimeStep"];
 
-    if (!file)
-    {
+    if (!file) {
         ERROR("Invalid input format");
         config_.reset();
         return false;
     }
 
-    if (!tryLoadAmmoParams())
-    {
+    if (!tryLoadAmmoParams()) {
         config_.reset();
         return false;
     }
@@ -63,8 +60,7 @@ Ammo* JsonConfigLoader::getAmmoParams() const
 bool JsonConfigLoader::tryLoadAmmoParams()
 {
     auto it = ammoTable.find(config_->ammoName);
-    if (it == ammoTable.end())
-    {
+    if (it == ammoTable.end()) {
         ERROR("Unknown ammo type: " << config_->ammoName);
         return false;
     }

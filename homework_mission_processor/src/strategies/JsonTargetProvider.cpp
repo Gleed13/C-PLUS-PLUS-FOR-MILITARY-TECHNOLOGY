@@ -12,10 +12,7 @@ std::size_t JsonTargetProvider::getTargetCount() const
     return tracks_.size();
 }
 
-std::optional<Coord> JsonTargetProvider::getPosition(
-    std::size_t target_index,
-    float time,
-    float sample_interval) const
+std::optional<Coord> JsonTargetProvider::getPosition(std::size_t target_index, float time, float sample_interval) const
 {
     if (tracks_.empty()) {
         ERROR("Targets are not loaded");
@@ -62,8 +59,7 @@ JsonTargetProvider::JsonTargetProvider(const std::string config_path)
 bool JsonTargetProvider::loadConfig()
 {
     std::ifstream file(config_path_);
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         ERROR(config_path_ << " file error");
         return false;
     }
@@ -71,7 +67,8 @@ bool JsonTargetProvider::loadConfig()
     json json_data;
     try {
         file >> json_data;
-    } catch (const json::parse_error& e) {
+    }
+    catch (const json::parse_error& e) {
         ERROR("JSON parse error: " << e.what());
         return false;
     }
@@ -90,10 +87,7 @@ bool JsonTargetProvider::loadConfig()
         track.positions.reserve(positions.size());
 
         for (const auto& position : positions) {
-            track.positions.push_back(Coord{
-                position.at("x").get<float>(),
-                position.at("y").get<float>()
-            });
+            track.positions.push_back(Coord{position.at("x").get<float>(), position.at("y").get<float>()});
         }
 
         tracks_.push_back(std::move(track));
@@ -104,10 +98,7 @@ bool JsonTargetProvider::loadConfig()
     return true;
 }
 
-bool JsonTargetProvider::validateCoordJson(
-    const json& item,
-    std::size_t target_index,
-    std::size_t position_index) const
+bool JsonTargetProvider::validateCoordJson(const json& item, std::size_t target_index, std::size_t position_index) const
 {
     if (!item.is_object()) {
         ERROR("Position " << position_index << " for target " << target_index << " must be an object");

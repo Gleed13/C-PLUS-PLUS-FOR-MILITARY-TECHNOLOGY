@@ -3,8 +3,7 @@
 #include "Coord.hpp"
 #include "DroneState.hpp"
 
-struct SimulationStep
-{
+struct SimulationStep {
     DroneState drone{};
     int targetIndex = -1;
     Coord dropPoint{};

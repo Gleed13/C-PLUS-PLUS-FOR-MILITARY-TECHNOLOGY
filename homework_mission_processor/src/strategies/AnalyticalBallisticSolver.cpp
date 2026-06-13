@@ -3,10 +3,9 @@
 #include "features/Logging.hpp"
 #include "strategies/AnalyticalBallisticSolver.hpp"
 
-std::optional<BallisticSolution> AnalyticalBallisticSolver::solve(
-    const DroneConfig& drone_config,
-    const Coord& target_position,
-    const Ammo& ammo)
+std::optional<BallisticSolution> AnalyticalBallisticSolver::solve(const DroneConfig& drone_config,
+                                                                  const Coord& target_position,
+                                                                  const Ammo& ammo)
 {
     float t = NAN;
     float h = NAN;
@@ -18,22 +17,17 @@ std::optional<BallisticSolution> AnalyticalBallisticSolver::solve(
     }
 
     DropPoint drop_point;
-    if (!tryCalculateDropPoint(
-            drone_config.startPos.x,
-            drone_config.startPos.y,
-            target_position.x,
-            target_position.y,
-            drone_config.accelPath,
-            h,
-            &drop_point)) {
+    if (!tryCalculateDropPoint(drone_config.startPos.x,
+                               drone_config.startPos.y,
+                               target_position.x,
+                               target_position.y,
+                               drone_config.accelPath,
+                               h,
+                               &drop_point)) {
         return std::nullopt;
     }
 
-    return BallisticSolution{
-        .dropPoint = drop_point,
-        .fallTime = t,
-        .horizontalDistance = h
-    };
+    return BallisticSolution{.dropPoint = drop_point, .fallTime = t, .horizontalDistance = h};
 }
 
 bool AnalyticalBallisticSolver::tryCalculateFreeFallTime(float zd, float attackSpeed, float mass, float drag, float lift, float* t)
@@ -62,9 +56,7 @@ bool AnalyticalBallisticSolver::tryCalculateFreeFallTime(float zd, float attackS
     float phi = std::acos(phiArg);
     DEBUG("phi (angle for cosine solution): " << phi << " radians");
 
-    *t = 2 * std::sqrt(-p / 3) *
-             std::cos((phi + 4 * static_cast<float>(M_PI)) / 3) -
-         b / (3 * a);
+    *t = 2 * std::sqrt(-p / 3) * std::cos((phi + 4 * static_cast<float>(M_PI)) / 3) - b / (3 * a);
     DEBUG("Projectile's free-fall time: " << *t << " seconds");
     if (*t <= 0) {
         ERROR("Non-positive time to target: " << *t << " seconds");

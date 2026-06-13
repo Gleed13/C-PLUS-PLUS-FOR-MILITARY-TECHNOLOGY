@@ -11,17 +11,12 @@ namespace {
 
 nlohmann::json coordToJson(const Coord& coord)
 {
-    return {
-        {"x", coord.x},
-        {"y", coord.y}
-    };
+    return {{"x", coord.x}, {"y", coord.y}};
 }
 
-}  // namespace
+}    // namespace
 
-bool SimulationRecorder::writeJson(
-    const SimulationResult& result,
-    const std::string& output_path) const
+bool SimulationRecorder::writeJson(const SimulationResult& result, const std::string& output_path) const
 {
     std::ofstream output{output_path};
     if (!output.is_open()) {

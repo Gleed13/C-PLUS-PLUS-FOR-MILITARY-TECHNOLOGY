@@ -4,8 +4,7 @@
 
 #include "Coord.hpp"
 
-struct DropPoint
-{
+struct DropPoint {
     std::optional<Coord> intermPoint;
     Coord firePoint;
 };

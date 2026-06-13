@@ -9,36 +9,24 @@ bool FileConfigLoader::tryLoadConfig(const std::string filename)
 {
     std::ifstream file(filename);
 
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         ERROR("File error");
         return false;
     }
 
     config_ = std::make_unique<DroneConfig>();
 
-    file >> config_->startPos.x
-         >> config_->startPos.y
-         >> config_->altitude
-         >> config_->initialDir
-         >> config_->attackSpeed
-         >> config_->accelPath
-         >> config_->angularSpeed
-         >> config_->turnThreshold
-         >> config_->ammoName
-         >> config_->simTimeStep
-         >> config_->hitRadius
-         >> config_->arrayTimeStep;
+    file >> config_->startPos.x >> config_->startPos.y >> config_->altitude >> config_->initialDir >> config_->attackSpeed >>
+        config_->accelPath >> config_->angularSpeed >> config_->turnThreshold >> config_->ammoName >> config_->simTimeStep >>
+        config_->hitRadius >> config_->arrayTimeStep;
 
-    if (!file)
-    {
+    if (!file) {
         ERROR("Invalid input format");
         config_.reset();
         return false;
     }
 
-    if (!tryLoadAmmoParams())
-    {
+    if (!tryLoadAmmoParams()) {
         config_.reset();
         return false;
     }
@@ -59,8 +47,7 @@ Ammo* FileConfigLoader::getAmmoParams() const
 bool FileConfigLoader::tryLoadAmmoParams()
 {
     auto it = ammoTable.find(config_->ammoName);
-    if (it == ammoTable.end())
-    {
+    if (it == ammoTable.end()) {
         ERROR("Unknown ammo type: " << config_->ammoName);
         return false;
     }

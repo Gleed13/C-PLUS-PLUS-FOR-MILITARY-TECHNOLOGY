@@ -4,8 +4,7 @@
 
 #include "Coord.hpp"
 
-struct DroneConfig
-{
+struct DroneConfig {
     Coord startPos;
     float altitude;
     float initialDir;

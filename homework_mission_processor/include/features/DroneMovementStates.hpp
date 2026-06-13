@@ -17,33 +17,33 @@ struct DroneMovementContext {
 };
 
 class IDroneState {
-  public:
+public:
     virtual ~IDroneState() = default;
 
     virtual std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const = 0;
 };
 
 class StateStopped final : public IDroneState {
-  public:
+public:
     std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
 };
 
 class StateAccelerating final : public IDroneState {
-  public:
+public:
     std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
 };
 
 class StateDecelerating final : public IDroneState {
-  public:
+public:
     std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
 };
 
 class StateTurning final : public IDroneState {
-  public:
+public:
     std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
 };
 
 class StateMoving final : public IDroneState {
-  public:
+public:
     std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
 };

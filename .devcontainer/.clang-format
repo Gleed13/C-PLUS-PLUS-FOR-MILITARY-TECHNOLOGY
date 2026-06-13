@@ -4,7 +4,7 @@ Language: Cpp
 # Файл копіюється в корінь devcontainer-а, щоб clang-format знаходив його
 # незалежно від директорії, з якої запускається команда.
 # BasedOnStyle: Google
-AccessModifierOffset: -2
+AccessModifierOffset: -4
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: false
 AlignConsecutiveAssignments: false

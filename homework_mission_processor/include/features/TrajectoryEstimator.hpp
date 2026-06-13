@@ -8,26 +8,18 @@
 #include "models/DroneState.hpp"
 #include "models/DropPoint.hpp"
 
-class TrajectoryEstimator final
-{
+class TrajectoryEstimator final {
 public:
-    explicit TrajectoryEstimator(
-        const DroneMotionProfile& motion_profile);
+    explicit TrajectoryEstimator(const DroneMotionProfile& motion_profile);
 
-    std::optional<float> estimateArrivalTime(
-        const DroneState& drone,
-        const Coord& target_position,
-        const DropPoint& drop_point,
-        const DroneConfig& config) const;
+    std::optional<float> estimateArrivalTime(const DroneState& drone,
+                                             const Coord& target_position,
+                                             const DropPoint& drop_point,
+                                             const DroneConfig& config) const;
 
 private:
     const DroneMotionProfile& motion_profile_;
 
-    static float angleToTarget(
-        const Coord& position,
-        float direction,
-        const Coord& target_position);
-    static float distance(
-        const Coord& first,
-        const Coord& second);
+    static float angleToTarget(const Coord& position, float direction, const Coord& target_position);
+    static float distance(const Coord& first, const Coord& second);
 };
