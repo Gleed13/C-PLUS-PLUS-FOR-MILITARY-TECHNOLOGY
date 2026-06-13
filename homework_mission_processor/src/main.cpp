@@ -16,7 +16,15 @@ int main(int argc, char** argv)
     const std::string output_path = argc == 3 ? argv[2] : "simulation.json";
     auto loader = StrategyFactory::createLoader(StrategyFactory::LoaderType::JSON);
     auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::JSON, argv[1]);
-    auto solver = StrategyFactory::createSolver(StrategyFactory::SolverType::ANALYTICAL);
+    auto solver = StrategyFactory::createSolver(
+        StrategyFactory::SolverType::TABLE,
+        "data/ballistic_table.txt");
+    if (loader == nullptr ||
+        provider == nullptr ||
+        solver == nullptr) {
+        ERROR("Failed to create processing strategies");
+        return 1;
+    }
 
     MissionProcessor processor(std::move(loader), std::move(provider), std::move(solver));
     if (!processor.init()) {

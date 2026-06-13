@@ -11,9 +11,11 @@ class StrategyFactory {
 public:
 enum class LoaderType { FILE, JSON };
 enum class ProviderType { JSON };
-enum class SolverType { ANALYTICAL };
+enum class SolverType { ANALYTICAL, TABLE };
 
     static std::unique_ptr<IConfigLoader> createLoader(LoaderType type);
     static std::unique_ptr<ITargetProvider> createProvider(ProviderType type, const std::string param);
-    static std::unique_ptr<IBallisticSolver> createSolver(SolverType type);
+    static std::unique_ptr<IBallisticSolver> createSolver(
+        SolverType type,
+        const std::string& param = "");
 };
