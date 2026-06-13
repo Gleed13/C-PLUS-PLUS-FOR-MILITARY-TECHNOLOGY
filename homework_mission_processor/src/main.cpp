@@ -8,17 +8,20 @@
 
 int main(int argc, char** argv)
 {
-    if (argc < 2 || argc > 3) {
-        ERROR("Usage: " << argv[0] << " <targets_input_file> [simulation_output_file]");
+    if (argc < 4 || argc > 5) {
+        ERROR(
+            "Usage: " << argv[0]
+                      << " <config_input_file> <targets_input_file> <ballistic_table_file>"
+                         " [simulation_output_file]");
         return 1;
     }
 
-    const std::string output_path = argc == 3 ? argv[2] : "simulation.json";
+    const std::string output_path = argc == 5 ? argv[4] : "simulation.json";
     auto loader = StrategyFactory::createLoader(StrategyFactory::LoaderType::JSON);
-    auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::JSON, argv[1]);
+    auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::JSON, argv[2]);
     auto solver = StrategyFactory::createSolver(
         StrategyFactory::SolverType::TABLE,
-        "data/ballistic_table.txt");
+        argv[3]);
     if (loader == nullptr ||
         provider == nullptr ||
         solver == nullptr) {
@@ -27,7 +30,7 @@ int main(int argc, char** argv)
     }
 
     MissionProcessor processor(std::move(loader), std::move(provider), std::move(solver));
-    if (!processor.init()) {
+    if (!processor.init(argv[1])) {
         return 1;
     }
 

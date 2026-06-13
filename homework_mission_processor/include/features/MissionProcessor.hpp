@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <string>
 
 #include "features/DroneMotionProfile.hpp"
 #include "features/DroneMovementController.hpp"
@@ -18,7 +19,7 @@ public:
         std::unique_ptr<IConfigLoader> config_loader,
         std::unique_ptr<ITargetProvider> target_provider,
         std::unique_ptr<IBallisticSolver> solver);
-    bool init();
+    bool init(const std::string& config_path);
     SimulationResult run(std::size_t max_steps = 10000);
     void reset();
     void changeSolver(std::unique_ptr<IBallisticSolver> new_solver);

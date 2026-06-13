@@ -19,9 +19,9 @@ MissionProcessor::MissionProcessor(
 {
 }
 
-bool MissionProcessor::init()
+bool MissionProcessor::init(const std::string& config_path)
 {
-    if (!config_loader_->tryLoadConfig("data/config.json"))
+    if (!config_loader_->tryLoadConfig(config_path))
     {
         ERROR("Failed to load configuration");
         initialized_ = false;
