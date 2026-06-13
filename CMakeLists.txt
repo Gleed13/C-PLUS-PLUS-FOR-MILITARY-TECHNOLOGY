@@ -19,6 +19,7 @@ add_subdirectory(homework_04)
 add_subdirectory(homework_05)
 add_subdirectory(homework_06)
 add_subdirectory(homework_07)
+add_subdirectory(homework_08)
 
 if(NOT CMAKE_CROSSCOMPILING)
   enable_testing()
