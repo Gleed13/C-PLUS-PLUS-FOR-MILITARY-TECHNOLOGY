@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+cd "$REPO_ROOT"
+
+if [ "$#" -lt 1 ]; then
+  echo "Usage: $0 <folder> {format|lint|test|quality}"
+  echo "Example: $0 homework_06 quality"
+  exit 1
+fi
+
+TARGET_DIR="$1"
+ACTION="${2:-quality}"
+
+BUILD_DIR="$TARGET_DIR/build"
+
+CLANG_FORMAT_CONFIG=".devcontainer/.clang-format"
+CLANG_TIDY_CONFIG=".devcontainer/.clang-tidy"
+CMAKE_FORMAT_CONFIG=".devcontainer/.cmake-format.json"
+
+if [ ! -d "$TARGET_DIR" ]; then
+  echo "Error: target folder does not exist: $TARGET_DIR"
+  exit 1
+fi
+
+format_cpp() {
+  echo "Formatting C/C++ files in $TARGET_DIR..."
+
+  find "$TARGET_DIR" \
+    \( -name "*.cpp" -o -name "*.hpp" \) \
+    -not -path "*/build/*" \
+    -print0 |
+    xargs -0 --no-run-if-empty clang-format -i --style=file:"$CLANG_FORMAT_CONFIG"
+}
+
+format_cmake() {
+  echo "Formatting CMake files in $TARGET_DIR..."
+
+  find "$TARGET_DIR" \
+    \( -name "CMakeLists.txt" -o -name "*.cmake" \) \
+    -not -path "*/build/*" \
+    -print0 |
+    xargs -0 --no-run-if-empty cmake-format -i --config-file "$CMAKE_FORMAT_CONFIG"
+}
+
+format() {
+  format_cpp
+  format_cmake
+}
+
+lint() {
+  echo "Running clang-tidy for $TARGET_DIR..."
+
+  if [ ! -d "$BUILD_DIR" ]; then
+    echo "Error: build folder does not exist: $BUILD_DIR"
+    echo "Configure first, for example:"
+    echo "cmake --preset debug"
+    exit 1
+  fi
+
+  if [ ! -f "$BUILD_DIR/compile_commands.json" ]; then
+    echo "Error: compile_commands.json not found in $BUILD_DIR"
+    echo "Configure first, for example:"
+    echo "cmake --preset debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+    exit 1
+  fi
+
+  find "$TARGET_DIR" \
+    \( -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" \) \
+    -not -path "*/build/*" \
+    -print0 |
+    xargs -0 --no-run-if-empty clang-tidy \
+      -p "$BUILD_DIR" \
+      --config-file="$CLANG_TIDY_CONFIG" \
+      --format-style=file:"$CLANG_FORMAT_CONFIG"
+}
+
+test_project() {
+  echo "Building and running tests for $TARGET_DIR..."
+
+  if [ ! -d "$BUILD_DIR" ]; then
+    echo "Error: build folder does not exist: $BUILD_DIR"
+    echo "Configure first, for example:"
+    echo "cmake --preset debug"
+    exit 1
+  fi
+
+  cmake --build --preset debug
+  ctest --test-dir "$BUILD_DIR" --output-on-failure
+}
+
+case "$ACTION" in
+  format)
+    format
+    ;;
+  lint)
+    lint
+    ;;
+  test)
+    test_project
+    ;;
+  quality | all)
+    format
+    lint
+    test_project
+    ;;
+  *)
+    echo "Unknown action: $ACTION"
+    echo "Usage: $0 <folder> {format|lint|test|quality}"
+    exit 1
+    ;;
+esac

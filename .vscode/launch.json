@@ -89,6 +89,21 @@
       ]
     },
     {
+      "name": "Debug ballistics_cli",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_06/build/ballistics_cli",
+      "args": [
+        "data/${input:ballisticsInputFile}"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_06",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
+    {
       "name": "Debug homework_07",
       "type": "cppdbg",
       "request": "launch",
@@ -127,6 +142,16 @@
         "empty.txt",
         "good.txt",
         "not_so_good.txt"
+      ],
+      "default": "good.txt"
+    },
+    {
+      "id": "ballisticsInputFile",
+      "type": "pickString",
+      "description": "Select ballistics input file",
+      "options": [
+        "input.txt",
+        "unknown_ammo.txt",
       ],
       "default": "good.txt"
     }
