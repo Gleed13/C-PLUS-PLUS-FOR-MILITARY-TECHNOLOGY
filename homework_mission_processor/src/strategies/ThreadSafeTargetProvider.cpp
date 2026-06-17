@@ -5,57 +5,10 @@
 #include <utility>
 
 #include "features/Logging.hpp"
-#include "strategies/JsonTargetProvider.hpp"
+#include "models/TargetTrack.hpp"
+#include "strategies/ThreadSafeTargetProvider.hpp"
 
-std::size_t JsonTargetProvider::getTargetCount() const
-{
-    return tracks_.size();
-}
-
-std::optional<Coord> JsonTargetProvider::getPosition(std::size_t target_index, std::vector<float> params) const
-{
-    if (tracks_.empty()) {
-        ERROR("Targets are not loaded");
-        return std::nullopt;
-    }
-
-    if (target_index >= tracks_.size()) {
-        ERROR("Target index out of range");
-        return std::nullopt;
-    }
-
-    if (params.size() != 2) {
-        ERROR("Invalid parameters for target position query. Expected 2 parameters: time and sample interval");
-        return std::nullopt;
-    }
-    const float time = params.at(0);
-    const float sample_interval = params.at(1);
-
-    if (!std::isfinite(time) || time < 0.0F) {
-        ERROR("Target query time must be finite and non-negative");
-        return std::nullopt;
-    }
-
-    if (!std::isfinite(sample_interval) || sample_interval <= 0.0F) {
-        ERROR("Target sample interval must be finite and positive");
-        return std::nullopt;
-    }
-
-    const auto& positions = tracks_[target_index].positions;
-    if (positions.empty()) {
-        ERROR("Target track has no positions");
-        return std::nullopt;
-    }
-
-    const float sample_position = std::fmod(time / sample_interval, static_cast<float>(positions.size()));
-    const auto current_index = static_cast<std::size_t>(std::floor(sample_position));
-    const auto next_index = (current_index + 1) % positions.size();
-    const float fraction = sample_position - static_cast<float>(current_index);
-
-    return positions[current_index] + (positions[next_index] - positions[current_index]) * fraction;
-}
-
-JsonTargetProvider::JsonTargetProvider(const std::string config_path)
+ThreadSafeTargetProvider::ThreadSafeTargetProvider(const std::string config_path)
     : config_path_(config_path)
 {
     if (!loadConfig()) {
@@ -63,7 +16,85 @@ JsonTargetProvider::JsonTargetProvider(const std::string config_path)
     }
 }
 
-bool JsonTargetProvider::loadConfig()
+std::size_t ThreadSafeTargetProvider::getTargetCount() const
+{
+    return tracks_.size();
+}
+
+std::optional<Coord> ThreadSafeTargetProvider::getPosition(std::size_t target_index, std::vector<float> params) const
+{
+    if (!validateTargetsLoadedAndIndex(target_index)) {
+        return std::nullopt;
+    }
+
+    if (params.size() != 0) {
+        ERROR("Parameters are not used in this implementation");
+        return std::nullopt;
+    }
+
+    std::lock_guard<std::mutex> lock(targets_mutex_);
+    return targets_[target_index].pos;
+}
+
+std::optional<Target> ThreadSafeTargetProvider::getTarget(std::size_t target_index) const
+{
+    if (!validateTargetsLoadedAndIndex(target_index)) {
+        return std::nullopt;
+    }
+
+    std::lock_guard<std::mutex> lock(targets_mutex_);
+    return targets_[target_index];
+}
+
+bool ThreadSafeTargetProvider::simulateTargetsMovement(const float time_interval_seconds)
+{
+    if (!simulation_stop_requested_) {
+        ERROR("Target simulation is already running");
+        return false;
+    }
+    const auto interval = std::chrono::milliseconds(
+        static_cast<int>(time_interval_seconds * 1000.0F));
+    simulation_stop_requested_ = false;
+
+    while (true) {
+        updateTargets(time_interval_seconds);
+        if (waitForStopRequested(interval)) {
+            break;
+        }
+    }
+    return true;
+}
+
+bool ThreadSafeTargetProvider::requestSimulationStop()
+{
+    if (simulation_stop_requested_) {
+        ERROR("Target simulation is not running");
+        return false;
+    }
+    {
+        std::lock_guard<std::mutex> lock(simulation_stop_mutex_);
+        simulation_stop_requested_ = true;
+    }
+    simulation_stop_cv_.notify_all();
+    return true;
+}
+
+bool ThreadSafeTargetProvider::validateTargetsLoadedAndIndex(std::size_t target_index) const
+{
+    if (tracks_.empty()) {
+        ERROR("Targets are not loaded");
+        return false;
+    }
+
+    if (target_index >= tracks_.size()) {
+        ERROR("Target index out of range");
+        return false;
+    }
+
+    return true;
+}
+
+bool ThreadSafeTargetProvider::loadConfig()
 {
     std::ifstream file(config_path_);
     if (!file.is_open()) {
@@ -105,7 +136,7 @@ bool JsonTargetProvider::loadConfig()
     return true;
 }
 
-bool JsonTargetProvider::validateCoordJson(const json& item, std::size_t target_index, std::size_t position_index) const
+bool ThreadSafeTargetProvider::validateCoordJson(const json& item, std::size_t target_index, std::size_t position_index) const
 {
     if (!item.is_object()) {
         ERROR("Position " << position_index << " for target " << target_index << " must be an object");
@@ -135,7 +166,7 @@ bool JsonTargetProvider::validateCoordJson(const json& item, std::size_t target_
     return true;
 }
 
-bool JsonTargetProvider::validateTargetsJson(const json& json_data) const
+bool ThreadSafeTargetProvider::validateTargetsJson(const json& json_data) const
 {
     if (!json_data.is_object()) {
         ERROR("JSON root must be an object");
@@ -197,4 +228,46 @@ bool JsonTargetProvider::validateTargetsJson(const json& json_data) const
     }
 
     return true;
+}
+
+void ThreadSafeTargetProvider::updateTargets(const float time_interval_seconds)
+{
+    std::lock_guard<std::mutex> lock(targets_mutex_);
+
+    if (targets_.empty()) {
+        for (const TargetTrack& track : tracks_) {
+            if (!track.positions.empty()) {
+                targets_.push_back(Target{track.positions.front(), Coord{0.0F, 0.0F}});
+            }
+        }
+    }
+    else {
+        for (std::size_t i = 0; i < targets_.size(); ++i) {
+            const TargetTrack& track = tracks_[i];
+
+            if (!track.positions.empty()) {
+                const auto& current_pos = targets_[i].pos;
+
+                const auto& next_pos = track.positions.size() > i + 1 ? track.positions[i + 1] : track.positions.front();
+
+                targets_[i].velocity = (next_pos - current_pos) / time_interval_seconds;
+
+                targets_[i].pos = next_pos;
+            }
+        }
+    }
+}
+
+bool ThreadSafeTargetProvider::waitForStopRequested(std::chrono::milliseconds interval)
+{
+    std::unique_lock<std::mutex> lock(simulation_stop_mutex_);
+
+    const bool should_stop = simulation_stop_cv_.wait_for(
+        lock,
+        interval,
+        [this]() {
+            return simulation_stop_requested_;
+        });
+
+    return should_stop;
 }

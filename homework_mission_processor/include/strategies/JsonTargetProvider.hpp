@@ -16,7 +16,7 @@ class JsonTargetProvider : public ITargetProvider {
 public:
     JsonTargetProvider(const std::string config_path);
     std::size_t getTargetCount() const override;
-    std::optional<Coord> getPosition(std::size_t target_index, float time, float sample_interval) const override;
+    std::optional<Coord> getPosition(std::size_t target_index, std::vector<float> params) const override;
 
 private:
     static constexpr std::size_t kMaxTargets = 32;

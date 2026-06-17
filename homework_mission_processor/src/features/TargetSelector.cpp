@@ -29,7 +29,7 @@ std::optional<TargetSelection> TargetSelector::select(const DroneState& drone,
     current_config.initialDir = drone.direction;
 
     for (std::size_t target_index = 0; target_index < target_provider.getTargetCount(); ++target_index) {
-        const auto target_position = target_provider.getPosition(target_index, simulation_time, config.arrayTimeStep);
+        const auto target_position = target_provider.getPosition(target_index, {simulation_time, config.arrayTimeStep});
         if (!target_position.has_value()) {
             continue;
         }

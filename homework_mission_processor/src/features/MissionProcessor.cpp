@@ -56,7 +56,7 @@ SimulationResult MissionProcessor::run(std::size_t max_steps)
     const Ammo& ammo = *config_loader_->getAmmoParams();
     result.steps.reserve(max_steps);
 
-    const auto initial_target = target_provider_->getPosition(0, 0.0F, config.arrayTimeStep);
+    const auto initial_target = target_provider_->getPosition(0, {0.0F, config.arrayTimeStep});
     if (!initial_target.has_value()) {
         ERROR("Failed to load the initial target position");
         return result;
@@ -172,9 +172,9 @@ void MissionProcessor::changeSolver(std::unique_ptr<IBallisticSolver> new_solver
 std::optional<Coord> MissionProcessor::predictTargetPosition(std::size_t target_index, float simulation_time, float fall_time) const
 {
     const DroneConfig& config = *config_loader_->getConfig();
-    const auto current_position = target_provider_->getPosition(target_index, simulation_time, config.arrayTimeStep);
+    const auto current_position = target_provider_->getPosition(target_index, {simulation_time, config.arrayTimeStep});
     const auto previous_position =
-        target_provider_->getPosition(target_index, std::max(0.0F, simulation_time - config.simTimeStep), config.arrayTimeStep);
+        target_provider_->getPosition(target_index, {std::max(0.0F, simulation_time - config.simTimeStep), config.arrayTimeStep});
     if (!current_position.has_value() || !previous_position.has_value()) {
         return std::nullopt;
     }
