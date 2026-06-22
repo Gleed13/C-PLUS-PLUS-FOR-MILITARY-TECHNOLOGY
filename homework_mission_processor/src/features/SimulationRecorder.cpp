@@ -1,6 +1,5 @@
 #include <fstream>
 #include <string>
-#include <utility>
 
 #include <nlohmann/json.hpp>
 
@@ -37,7 +36,8 @@ bool SimulationRecorder::writeJson(const SimulationResult& result, const std::st
         step["dropPoint"] = coordToJson(simulation_step.dropPoint);
         step["aimPoint"] = coordToJson(simulation_step.aimPoint);
         step["predictedTarget"] = coordToJson(simulation_step.predictedTarget);
-        json_output["steps"].push_back(std::move(step));
+        step["timeSecSinceStart"] = simulation_step.timeSecSinceStart;
+        json_output["steps"].push_back(step);
     }
 
     output << json_output.dump(2);

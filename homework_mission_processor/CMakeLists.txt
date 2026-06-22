@@ -16,6 +16,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 add_executable(mission_processor_full_cli src/main.cpp
+    src/abstractions/BackgroundService.cpp
     src/strategies/StrategyFactory.cpp
     src/strategies/FileConfigLoader.cpp
     src/strategies/JsonConfigLoader.cpp
@@ -25,7 +26,7 @@ add_executable(mission_processor_full_cli src/main.cpp
     src/strategies/TableBallisticSolver.cpp
     src/features/DroneMotionProfile.cpp
     src/features/DroneMovementStates.cpp
-    src/features/DroneMovementController.cpp
+    src/features/DronePhysics.cpp
     src/features/TrajectoryEstimator.cpp
     src/features/TargetSelector.cpp
     src/features/SimulationRecorder.cpp

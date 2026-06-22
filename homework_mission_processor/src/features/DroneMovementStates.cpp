@@ -7,7 +7,7 @@
 namespace {
 
 template <typename State>
-std::unique_ptr<IDroneState> transitionTo(DroneMovementContext& context, DroneStatus next_status)
+std::unique_ptr<IDroneStateMachine> transitionTo(DroneMovementContext& context, DroneStatus next_status)
 {
     if (context.drone.status == next_status) {
         return nullptr;
@@ -22,7 +22,7 @@ float distance(const Coord& first, const Coord& second)
     return std::hypot(second.x - first.x, second.y - first.y);
 }
 
-std::unique_ptr<IDroneState> accelerate(DroneMovementContext& context)
+std::unique_ptr<IDroneStateMachine> accelerate(DroneMovementContext& context)
 {
     context.drone.speed += context.motionProfile.acceleration() * context.config.simTimeStep;
     if (context.drone.speed >= context.config.attackSpeed) {
@@ -33,7 +33,7 @@ std::unique_ptr<IDroneState> accelerate(DroneMovementContext& context)
     return transitionTo<StateAccelerating>(context, DroneStatus::Accelerating);
 }
 
-std::unique_ptr<IDroneState> decelerate(DroneMovementContext& context)
+std::unique_ptr<IDroneStateMachine> decelerate(DroneMovementContext& context)
 {
     context.drone.speed -= context.motionProfile.acceleration() * context.config.simTimeStep;
     if (context.drone.speed <= 0.0F) {
@@ -44,7 +44,7 @@ std::unique_ptr<IDroneState> decelerate(DroneMovementContext& context)
     return transitionTo<StateDecelerating>(context, DroneStatus::Decelerating);
 }
 
-std::unique_ptr<IDroneState> turnOrAccelerate(DroneMovementContext& context)
+std::unique_ptr<IDroneStateMachine> turnOrAccelerate(DroneMovementContext& context)
 {
     if (std::abs(context.targetAngle) > context.config.turnThreshold / 2.0F) {
         const float direction_sign = context.targetAngle > 0.0F ? 1.0F : -1.0F;
@@ -56,7 +56,7 @@ std::unique_ptr<IDroneState> turnOrAccelerate(DroneMovementContext& context)
     return accelerate(context);
 }
 
-std::unique_ptr<IDroneState> accelerateOrDecelerate(DroneMovementContext& context)
+std::unique_ptr<IDroneStateMachine> accelerateOrDecelerate(DroneMovementContext& context)
 {
     if (std::abs(context.targetAngle) > context.config.turnThreshold) {
         return decelerate(context);
@@ -74,27 +74,27 @@ std::unique_ptr<IDroneState> accelerateOrDecelerate(DroneMovementContext& contex
 
 }    // namespace
 
-std::unique_ptr<IDroneState> StateStopped::execute(DroneMovementContext& context) const
+std::unique_ptr<IDroneStateMachine> StateStopped::execute(DroneMovementContext& context) const
 {
     return turnOrAccelerate(context);
 }
 
-std::unique_ptr<IDroneState> StateAccelerating::execute(DroneMovementContext& context) const
+std::unique_ptr<IDroneStateMachine> StateAccelerating::execute(DroneMovementContext& context) const
 {
     return accelerateOrDecelerate(context);
 }
 
-std::unique_ptr<IDroneState> StateDecelerating::execute(DroneMovementContext& context) const
+std::unique_ptr<IDroneStateMachine> StateDecelerating::execute(DroneMovementContext& context) const
 {
     return accelerateOrDecelerate(context);
 }
 
-std::unique_ptr<IDroneState> StateTurning::execute(DroneMovementContext& context) const
+std::unique_ptr<IDroneStateMachine> StateTurning::execute(DroneMovementContext& context) const
 {
     return turnOrAccelerate(context);
 }
 
-std::unique_ptr<IDroneState> StateMoving::execute(DroneMovementContext& context) const
+std::unique_ptr<IDroneStateMachine> StateMoving::execute(DroneMovementContext& context) const
 {
     if (std::abs(context.targetAngle) > context.config.turnThreshold) {
         return decelerate(context);

@@ -1,15 +1,20 @@
 #include <cmath>
 #include <fstream>
 #include <optional>
-#include <string>
 #include <utility>
 
 #include "features/Logging.hpp"
 #include "models/TargetTrack.hpp"
 #include "strategies/ThreadSafeTargetProvider.hpp"
 
-ThreadSafeTargetProvider::ThreadSafeTargetProvider(const std::string config_path)
+ThreadSafeTargetProvider::~ThreadSafeTargetProvider() {
+    stop();
+}
+
+ThreadSafeTargetProvider::ThreadSafeTargetProvider(const std::string config_path, const float time_interval_seconds, const float time_scale)
     : config_path_(config_path)
+    , time_interval_seconds_(time_interval_seconds)
+    , time_scale_(time_scale)
 {
     if (!loadConfig()) {
         ERROR("Failed to load JSON target provider");
@@ -46,37 +51,10 @@ std::optional<Target> ThreadSafeTargetProvider::getTarget(std::size_t target_ind
     return targets_[target_index];
 }
 
-bool ThreadSafeTargetProvider::simulateTargetsMovement(const float time_interval_seconds)
-{
-    if (!simulation_stop_requested_) {
-        ERROR("Target simulation is already running");
-        return false;
-    }
-    const auto interval = std::chrono::milliseconds(
-        static_cast<int>(time_interval_seconds * 1000.0F));
-    simulation_stop_requested_ = false;
-
-    while (true) {
-        updateTargets(time_interval_seconds);
-        if (waitForStopRequested(interval)) {
-            break;
-        }
-    }
-    return true;
-}
-
-bool ThreadSafeTargetProvider::requestSimulationStop()
-{
-    if (simulation_stop_requested_) {
-        ERROR("Target simulation is not running");
-        return false;
-    }
-    {
-        std::lock_guard<std::mutex> lock(simulation_stop_mutex_);
-        simulation_stop_requested_ = true;
-    }
-    simulation_stop_cv_.notify_all();
-    return true;
+void ThreadSafeTargetProvider::reset() {
+    stop();
+    std::lock_guard<std::mutex> lock(targets_mutex_);
+    targets_.clear();
 }
 
 bool ThreadSafeTargetProvider::validateTargetsLoadedAndIndex(std::size_t target_index) const
@@ -230,44 +208,53 @@ bool ThreadSafeTargetProvider::validateTargetsJson(const json& json_data) const
     return true;
 }
 
-void ThreadSafeTargetProvider::updateTargets(const float time_interval_seconds)
+void ThreadSafeTargetProvider::updateTargets()
 {
     std::lock_guard<std::mutex> lock(targets_mutex_);
+    auto current_time_point = std::chrono::steady_clock::now();
 
     if (targets_.empty()) {
         for (const TargetTrack& track : tracks_) {
             if (!track.positions.empty()) {
-                targets_.push_back(Target{track.positions.front(), Coord{0.0F, 0.0F}});
+                targets_.push_back(Target{track.positions.front(), Coord{0.0F, 0.0F}, current_time_point});
             }
         }
+        return;
     }
-    else {
-        for (std::size_t i = 0; i < targets_.size(); ++i) {
-            const TargetTrack& track = tracks_[i];
 
-            if (!track.positions.empty()) {
-                const auto& current_pos = targets_[i].pos;
+    for (std::size_t i = 0; i < targets_.size(); ++i) {
+        const TargetTrack& track = tracks_[i];
 
-                const auto& next_pos = track.positions.size() > i + 1 ? track.positions[i + 1] : track.positions.front();
-
-                targets_[i].velocity = (next_pos - current_pos) / time_interval_seconds;
-
-                targets_[i].pos = next_pos;
-            }
+        if (!track.positions.empty()) {
+            const auto& current_pos = targets_[i].pos;
+            const auto& next_pos = track.positions.size() > i + 1 ? track.positions[i + 1] : track.positions.front();
+            targets_[i].velocity = (next_pos - current_pos) / time_interval_seconds_;
+            targets_[i].pos = next_pos;
+            targets_[i].lastUpdatedTimePoint = current_time_point;
         }
     }
 }
 
-bool ThreadSafeTargetProvider::waitForStopRequested(std::chrono::milliseconds interval)
+void ThreadSafeTargetProvider::run()
 {
-    std::unique_lock<std::mutex> lock(simulation_stop_mutex_);
+    const auto interval = std::chrono::milliseconds(
+        static_cast<int>(time_interval_seconds_ * 1000.0F / time_scale_));
 
-    const bool should_stop = simulation_stop_cv_.wait_for(
-        lock,
-        interval,
-        [this]() {
-            return simulation_stop_requested_;
-        });
+    while (!stop_requested()) {
+        auto step_start_time = std::chrono::steady_clock::now();
 
-    return should_stop;
+        updateTargets();
+
+        auto step_end_time = std::chrono::steady_clock::now();
+        auto step_elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(step_end_time - step_start_time);
+        auto remaining_sleep_time = interval - step_elapsed_time;
+        if (remaining_sleep_time <= std::chrono::nanoseconds(0)) {
+            continue;
+        }
+
+        bool stopped = wait_for(remaining_sleep_time);
+        if (stopped) {
+            break;
+        }
+    }
 }

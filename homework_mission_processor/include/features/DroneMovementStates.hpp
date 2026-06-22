@@ -16,34 +16,34 @@ struct DroneMovementContext {
     float targetAngle;
 };
 
-class IDroneState {
+class IDroneStateMachine {
 public:
-    virtual ~IDroneState() = default;
+    virtual ~IDroneStateMachine() = default;
 
-    virtual std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const = 0;
+    virtual std::unique_ptr<IDroneStateMachine> execute(DroneMovementContext& context) const = 0;
 };
 
-class StateStopped final : public IDroneState {
+class StateStopped final : public IDroneStateMachine {
 public:
-    std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
+    std::unique_ptr<IDroneStateMachine> execute(DroneMovementContext& context) const override;
 };
 
-class StateAccelerating final : public IDroneState {
+class StateAccelerating final : public IDroneStateMachine {
 public:
-    std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
+    std::unique_ptr<IDroneStateMachine> execute(DroneMovementContext& context) const override;
 };
 
-class StateDecelerating final : public IDroneState {
+class StateDecelerating final : public IDroneStateMachine {
 public:
-    std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
+    std::unique_ptr<IDroneStateMachine> execute(DroneMovementContext& context) const override;
 };
 
-class StateTurning final : public IDroneState {
+class StateTurning final : public IDroneStateMachine {
 public:
-    std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
+    std::unique_ptr<IDroneStateMachine> execute(DroneMovementContext& context) const override;
 };
 
-class StateMoving final : public IDroneState {
+class StateMoving final : public IDroneStateMachine {
 public:
-    std::unique_ptr<IDroneState> execute(DroneMovementContext& context) const override;
+    std::unique_ptr<IDroneStateMachine> execute(DroneMovementContext& context) const override;
 };

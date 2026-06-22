@@ -29,7 +29,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    const SimulationResult result = processor.run();
+    const SimulationResult result = processor.runs();
     const SimulationRecorder recorder;
     if (!recorder.writeJson(result, output_path)) {
         return 1;

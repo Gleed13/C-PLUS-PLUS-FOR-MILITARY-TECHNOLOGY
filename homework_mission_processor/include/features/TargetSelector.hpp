@@ -8,14 +8,14 @@
 #include "interfaces/ITargetProvider.hpp"
 #include "models/Ammo.hpp"
 #include "models/DroneConfig.hpp"
-#include "models/DroneState.hpp"
+#include "models/DroneTelemetry.hpp"
 #include "models/TargetSelection.hpp"
 
 class TargetSelector final {
 public:
     explicit TargetSelector(const DroneMotionProfile& motion_profile);
 
-    std::optional<TargetSelection> select(const DroneState& drone,
+    std::optional<TargetSelection> select(const DroneTelemetry& droneTelemetry,
                                           float simulation_time,
                                           const DroneConfig& config,
                                           const Ammo& ammo,

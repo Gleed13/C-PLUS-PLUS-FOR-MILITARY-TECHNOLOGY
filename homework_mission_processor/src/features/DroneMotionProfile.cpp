@@ -22,11 +22,6 @@ bool DroneMotionProfile::init(const DroneConfig& config)
     return true;
 }
 
-float DroneMotionProfile::acceleration() const
-{
-    return initialized_ ? acceleration_ : 0.0F;
-}
-
 float DroneMotionProfile::remainingAccelerationPath(float speed) const
 {
     if (!initialized_ || speed >= attack_speed_) {
