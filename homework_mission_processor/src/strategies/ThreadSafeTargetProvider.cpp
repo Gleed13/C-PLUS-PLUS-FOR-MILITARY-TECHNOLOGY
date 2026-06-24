@@ -11,14 +11,31 @@ ThreadSafeTargetProvider::~ThreadSafeTargetProvider() {
     stop();
 }
 
-ThreadSafeTargetProvider::ThreadSafeTargetProvider(const std::string config_path, const float time_interval_seconds, const float time_scale)
+ThreadSafeTargetProvider::ThreadSafeTargetProvider(const std::string config_path)
     : config_path_(config_path)
-    , time_interval_seconds_(time_interval_seconds)
-    , time_scale_(time_scale)
 {
     if (!loadConfig()) {
         ERROR("Failed to load JSON target provider");
     }
+}
+
+bool ThreadSafeTargetProvider::init(std::shared_ptr<DroneConfig> config)
+{
+    if (config == nullptr) {
+        ERROR("Drone configuration is null");
+        return false;
+    }
+    if (config->arrayTimeStep <= 0.0F || config->timeScale <= 0.0F) {
+        ERROR("Invalid drone configuration: arrayTimeStep and timeScale must be positive");
+        return false;
+    }
+
+    for (const TargetTrack& track : tracks_) {
+        targets_.push_back(Target{track.positions.front(), Coord{0.0F, 0.0F}, 0.0F});
+    }
+
+    config_ = config;
+    return true;
 }
 
 std::size_t ThreadSafeTargetProvider::getTargetCount() const
@@ -49,6 +66,11 @@ std::optional<Target> ThreadSafeTargetProvider::getTarget(std::size_t target_ind
 
     std::lock_guard<std::mutex> lock(targets_mutex_);
     return targets_[target_index];
+}
+
+bool ThreadSafeTargetProvider::isThreadReady() const
+{
+    return !tracks_.empty();
 }
 
 void ThreadSafeTargetProvider::reset() {
@@ -208,17 +230,11 @@ bool ThreadSafeTargetProvider::validateTargetsJson(const json& json_data) const
     return true;
 }
 
-void ThreadSafeTargetProvider::updateTargets()
+void ThreadSafeTargetProvider::updateTargets(int track_index, float time_sec_since_start)
 {
     std::lock_guard<std::mutex> lock(targets_mutex_);
-    auto current_time_point = std::chrono::steady_clock::now();
 
-    if (targets_.empty()) {
-        for (const TargetTrack& track : tracks_) {
-            if (!track.positions.empty()) {
-                targets_.push_back(Target{track.positions.front(), Coord{0.0F, 0.0F}, current_time_point});
-            }
-        }
+    if (track_index == -1) { // skip first iteration to avoid updating targets before the first step
         return;
     }
 
@@ -227,10 +243,10 @@ void ThreadSafeTargetProvider::updateTargets()
 
         if (!track.positions.empty()) {
             const auto& current_pos = targets_[i].pos;
-            const auto& next_pos = track.positions.size() > i + 1 ? track.positions[i + 1] : track.positions.front();
-            targets_[i].velocity = (next_pos - current_pos) / time_interval_seconds_;
+            const auto& next_pos = track.positions.size() > i + 1 ? track.positions[track_index + 1] : track.positions.front();
+            targets_[i].velocity = (next_pos - current_pos) / config_->arrayTimeStep;
             targets_[i].pos = next_pos;
-            targets_[i].lastUpdatedTimePoint = current_time_point;
+            targets_[i].timeSecSinceStart = time_sec_since_start;
         }
     }
 }
@@ -238,12 +254,19 @@ void ThreadSafeTargetProvider::updateTargets()
 void ThreadSafeTargetProvider::run()
 {
     const auto interval = std::chrono::milliseconds(
-        static_cast<int>(time_interval_seconds_ * 1000.0F / time_scale_));
+        static_cast<int>(config_->arrayTimeStep * 1000.0F / config_->timeScale));
+    auto start_time = std::chrono::steady_clock::now();
+    int track_index = -1; // start with -1 to skip the first iteration and avoid updating targets before the first step
+    const int max_track_index = tracks_[0].positions.size() - 1;
 
     while (!stop_requested()) {
         auto step_start_time = std::chrono::steady_clock::now();
-
-        updateTargets();
+        auto time_sec_since_start = std::chrono::duration<float>((step_start_time - start_time) * config_->timeScale).count();
+        updateTargets(track_index, time_sec_since_start);
+        ++track_index;
+        if (track_index > max_track_index) {
+            track_index = 0; // loop back to the first position
+        }
 
         auto step_end_time = std::chrono::steady_clock::now();
         auto step_elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(step_end_time - step_start_time);

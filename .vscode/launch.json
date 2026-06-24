@@ -133,6 +133,24 @@
       "MIMode": "gdb",
       "miDebuggerPath": "/usr/bin/gdb"
     },
+    {
+      "name": "Debug homework_mission_processor",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_mission_processor/build/mission_processor_full_cli",
+      "args": [
+        "data/config.json",
+        "data/targets.json",
+        "data/ballistic_table.txt",
+        "data/simulation.json"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_mission_processor",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
   ],
   "inputs": [
     {

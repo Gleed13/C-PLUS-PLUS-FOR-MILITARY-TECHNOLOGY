@@ -11,9 +11,9 @@ struct DroneMovementContext {
     DroneState& drone;
     const DroneConfig& config;
     const DroneMotionProfile& motionProfile;
-    const DropPoint& destination;
-    Coord targetPosition;
-    float targetAngle;
+    const DropPoint destination;
+    const Coord targetPosition;
+    const float targetAngle;
 };
 
 class IDroneStateMachine {

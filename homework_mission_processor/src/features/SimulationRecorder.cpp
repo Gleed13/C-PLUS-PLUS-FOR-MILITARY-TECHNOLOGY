@@ -29,9 +29,9 @@ bool SimulationRecorder::writeJson(const SimulationResult& result, const std::st
 
     for (const SimulationStep& simulation_step : result.steps) {
         nlohmann::json step;
-        step["position"] = coordToJson(simulation_step.drone.position);
-        step["direction"] = simulation_step.drone.direction;
-        step["state"] = static_cast<int>(simulation_step.drone.status);
+        step["position"] = coordToJson(simulation_step.droneTelemetry.position);
+        step["direction"] = simulation_step.droneTelemetry.direction;
+        step["state"] = static_cast<int>(simulation_step.droneTelemetry.status);
         step["targetIndex"] = simulation_step.targetIndex;
         step["dropPoint"] = coordToJson(simulation_step.dropPoint);
         step["aimPoint"] = coordToJson(simulation_step.aimPoint);

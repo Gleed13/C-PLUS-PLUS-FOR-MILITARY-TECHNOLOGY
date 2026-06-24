@@ -21,7 +21,12 @@ public:
                      std::unique_ptr<IBallisticSolver> solver);
     bool init(const std::string& config_path, std::size_t max_steps = 10000);
     void changeSolver(std::unique_ptr<IBallisticSolver> new_solver);
+    void start(std::shared_ptr<std::latch> ready_latch, std::shared_ptr<std::latch> start_gate) override;
     void reset();
+    std::optional<SimulationResult> getSimulationResult();
+
+public:
+    DronePhysics& getDronePhysics() { return drone_physics_; }
 
 private:
     static constexpr float kHitRadiusCoefficient = 0.5F;
@@ -41,11 +46,10 @@ private:
     std::optional<SimulationResult> simulation_result_ = std::nullopt;
 
     StepOutcome runStep(
-        std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float initial_horizontal_distance);
-    std::optional<Coord> predictTargetPosition(std::size_t target_index, float simulation_time, float fall_time) const;
+        std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float initial_horizontal_distance,
+        std::chrono::steady_clock::time_point sim_start_time);
     bool isInFireRange(const DroneTelemetry& drone_telemetry, const Coord& predicted_target, float horizontal_distance, const DroneConfig& config) const;
     static Coord directionVector(float direction);
 
-    void start() override;
     void run() override;
 };

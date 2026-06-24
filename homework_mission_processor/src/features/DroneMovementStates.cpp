@@ -24,7 +24,7 @@ float distance(const Coord& first, const Coord& second)
 
 std::unique_ptr<IDroneStateMachine> accelerate(DroneMovementContext& context)
 {
-    context.drone.speed += context.motionProfile.acceleration() * context.config.simTimeStep;
+    context.drone.speed += context.motionProfile.acceleration() * context.config.physicsTimeStep;
     if (context.drone.speed >= context.config.attackSpeed) {
         context.drone.speed = context.config.attackSpeed;
         return transitionTo<StateMoving>(context, DroneStatus::Moving);
@@ -35,7 +35,7 @@ std::unique_ptr<IDroneStateMachine> accelerate(DroneMovementContext& context)
 
 std::unique_ptr<IDroneStateMachine> decelerate(DroneMovementContext& context)
 {
-    context.drone.speed -= context.motionProfile.acceleration() * context.config.simTimeStep;
+    context.drone.speed -= context.motionProfile.acceleration() * context.config.physicsTimeStep;
     if (context.drone.speed <= 0.0F) {
         context.drone.speed = 0.0F;
         return transitionTo<StateStopped>(context, DroneStatus::Stopped);
@@ -49,7 +49,7 @@ std::unique_ptr<IDroneStateMachine> turnOrAccelerate(DroneMovementContext& conte
     if (std::abs(context.targetAngle) > context.config.turnThreshold / 2.0F) {
         const float direction_sign = context.targetAngle > 0.0F ? 1.0F : -1.0F;
         context.drone.direction +=
-            direction_sign * std::min(context.config.angularSpeed * context.config.simTimeStep, std::abs(context.targetAngle));
+            direction_sign * std::min(context.config.angularSpeed * context.config.physicsTimeStep, std::abs(context.targetAngle));
         return transitionTo<StateTurning>(context, DroneStatus::Turning);
     }
 

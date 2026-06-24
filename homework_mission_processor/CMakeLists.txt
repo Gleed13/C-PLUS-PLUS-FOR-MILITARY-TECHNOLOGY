@@ -20,7 +20,6 @@ add_executable(mission_processor_full_cli src/main.cpp
     src/strategies/StrategyFactory.cpp
     src/strategies/FileConfigLoader.cpp
     src/strategies/JsonConfigLoader.cpp
-    src/strategies/JsonTargetProvider.cpp
     src/strategies/ThreadSafeTargetProvider.cpp
     src/strategies/AnalyticalBallisticSolver.cpp
     src/strategies/TableBallisticSolver.cpp

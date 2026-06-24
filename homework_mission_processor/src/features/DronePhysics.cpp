@@ -1,9 +1,11 @@
 #include <chrono>
 #include <cmath>
 #include <memory>
+#include <mutex>
 #include <utility>
 
 #include "abstractions/BackgroundService.hpp"
+#include "features/DroneMovementStates.hpp"
 #include "features/Logging.hpp"
 #include "models/DroneTelemetry.hpp"
 #include "models/DropPoint.hpp"
@@ -20,19 +22,17 @@ bool DronePhysics::init(std::shared_ptr<DroneConfig> config)
         config->turnThreshold < 0.0F) {
         ERROR("Invalid drone movement configuration");
         config_ = nullptr;
-        state_.reset();
         return false;
     }
 
     if (motion_profile_.acceleration() <= 0.0F) {
         ERROR("Drone motion profile is not initialized");
         config_ = nullptr;
-        state_.reset();
         return false;
     }
 
     config_ = config;
-    reset();
+    state_ = std::make_unique<StateStopped>();
     return true;
 }
 
@@ -43,7 +43,8 @@ bool DronePhysics::updateDestination(const DropPoint* destination)
         return false;
     }
 
-    current_destination_ = std::make_unique<DropPoint>(*destination);
+    std::lock_guard<std::mutex> lock(destination_mutex_);
+    current_destination_ = *destination;
     return true;
 }
 
@@ -51,6 +52,16 @@ void DronePhysics::updateTelemetry(DroneTelemetry telemetry)
 {
     std::lock_guard<std::mutex> lock(telemetry_mutex_);
     drone_telemetry_ = telemetry;
+}
+
+void DronePhysics::start(std::shared_ptr<std::latch> ready_latch, std::shared_ptr<std::latch> start_gate)
+{
+    if (config_ == nullptr || state_ == nullptr) {
+        ERROR("Drone movement controller is not initialized");
+        return;
+    }
+
+    BackgroundService::start(ready_latch, start_gate);
 }
 
 void DronePhysics::reset()
@@ -97,14 +108,22 @@ void DronePhysics::updatePosition()
     drone_.position.y += drone_.speed * std::sin(drone_.direction) * config_->physicsTimeStep;
 }
 
-void DronePhysics::start()
+std::optional<DroneMovementContext> DronePhysics::createMovementContext()
 {
-    if (config_ == nullptr || state_ == nullptr) {
-        ERROR("Drone movement controller is not initialized");
-        return;
+    std::lock_guard<std::mutex> lock(destination_mutex_);
+    if (!current_destination_.has_value()) {
+        return std::nullopt;
     }
 
-    BackgroundService::start();
+    const Coord target_position = current_destination_->intermPoint.value_or(current_destination_->firePoint);
+    const float target_angle = angleToTarget(target_position);
+    DroneMovementContext context{.drone = drone_,
+                                 .config = *config_,
+                                 .motionProfile = motion_profile_,
+                                 .destination = current_destination_.value(),
+                                 .targetPosition = target_position,
+                                 .targetAngle = target_angle};
+    return context;
 }
 
 void DronePhysics::run()
@@ -116,27 +135,23 @@ void DronePhysics::run()
     while (!stop_requested()) {
         auto step_start_time = std::chrono::steady_clock::now();
 
-        const Coord target_position = current_destination_->intermPoint.value_or(current_destination_->firePoint);
-        const float target_angle = angleToTarget(target_position);
-        DroneMovementContext context{.drone = drone_,
-                                     .config = *config_,
-                                     .motionProfile = motion_profile_,
-                                     .destination = *current_destination_,
-                                     .targetPosition = target_position,
-                                     .targetAngle = target_angle};
-        auto next_state = state_->execute(context);
-        if (next_state != nullptr) {
-            state_ = std::move(next_state);
+        auto context = createMovementContext();
+        if (context.has_value()) {
+            auto next_state = state_->execute(context.value());
+            if (next_state != nullptr) {
+                state_ = std::move(next_state);
+            }
+            updatePosition();
+            auto current_time = std::chrono::steady_clock::now();
+            auto telemetry =
+                DroneTelemetry{.position = drone_.position,
+                               .direction = drone_.direction,
+                               .speed = drone_.speed,
+                               .status = drone_.status,
+                               .timeSecSinceStart = std::chrono::duration<float>((current_time - start_time) * config_->timeScale).count()
+                };
+            updateTelemetry(telemetry);
         }
-        updatePosition();
-        auto current_time = std::chrono::steady_clock::now();
-        auto telemetry = DroneTelemetry{
-            .position = drone_.position,
-            .direction = drone_.direction,
-            .speed = drone_.speed,
-            .status = drone_.status,
-            .timeSecSinceStart = std::chrono::duration<float>(current_time - start_time).count()};
-        updateTelemetry(telemetry);
 
         auto step_end_time = std::chrono::steady_clock::now();
         auto step_elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(step_end_time - step_start_time);

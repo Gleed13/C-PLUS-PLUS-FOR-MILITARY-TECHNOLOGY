@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 
 #include "abstractions/BackgroundService.hpp"
 #include "features/DroneMotionProfile.hpp"
@@ -18,23 +19,25 @@ public:
     bool init(std::shared_ptr<DroneConfig> config);
     bool updateDestination(const DropPoint* destination);
     DroneTelemetry getTelemetry();
+    void start(std::shared_ptr<std::latch> ready_latch, std::shared_ptr<std::latch> start_gate) override;
     void reset();
 
 private:
     const DroneMotionProfile& motion_profile_;
     std::shared_ptr<DroneConfig> config_ = nullptr;
-    std::unique_ptr<IDroneStateMachine> state_;
+    std::unique_ptr<IDroneStateMachine> state_ = nullptr;
     DroneState drone_;
-    std::unique_ptr<DropPoint> current_destination_ = nullptr;
+
+    std::optional<DropPoint> current_destination_ = std::nullopt;
+    std::mutex destination_mutex_;
 
     DroneTelemetry drone_telemetry_;
     std::mutex telemetry_mutex_;
 
     void updateTelemetry(DroneTelemetry telemetry);
-
     float angleToTarget(const Coord& target_position);
     void updatePosition();
+    std::optional<DroneMovementContext> createMovementContext();
 
-    void start() override;
     void run() override;
 };
