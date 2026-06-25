@@ -130,7 +130,7 @@ void DronePhysics::run()
 {
     const auto interval = std::chrono::milliseconds(
         static_cast<int>(config_->physicsTimeStep * 1000.0F / config_->timeScale));
-    auto start_time = std::chrono::steady_clock::now();
+    int physics_steps = -1; // -1 to ignore first update before first delay
 
     while (!stop_requested()) {
         auto step_start_time = std::chrono::steady_clock::now();
@@ -142,13 +142,13 @@ void DronePhysics::run()
                 state_ = std::move(next_state);
             }
             updatePosition();
-            auto current_time = std::chrono::steady_clock::now();
+            ++physics_steps;
             auto telemetry =
                 DroneTelemetry{.position = drone_.position,
                                .direction = drone_.direction,
                                .speed = drone_.speed,
                                .status = drone_.status,
-                               .timeSecSinceStart = std::chrono::duration<float>((current_time - start_time) * config_->timeScale).count()
+                               .timeSecSinceStart = physics_steps * config_->physicsTimeStep * config_->timeScale
                 };
             updateTelemetry(telemetry);
         }

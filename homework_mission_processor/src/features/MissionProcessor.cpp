@@ -50,15 +50,14 @@ bool MissionProcessor::init(const std::string& config_path, std::size_t max_step
 }
 
 MissionProcessor::StepOutcome MissionProcessor::runStep(
-    std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float horizontal_distance,
-    std::chrono::steady_clock::time_point sim_start_time)
+    std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float horizontal_distance)
 {
     auto drone_telemetry = drone_physics_.getTelemetry();
     SimulationStep step;
     step.droneTelemetry = drone_telemetry;
     step.targetIndex = current_target_index_;
     step.aimPoint = drone_telemetry.position + directionVector(drone_telemetry.direction) * horizontal_distance;
-    step.timeSecSinceStart = std::chrono::duration<float>((std::chrono::steady_clock::now() - sim_start_time) * config.timeScale).count();
+    step.timeSecSinceStart = drone_telemetry.timeSecSinceStart;
 
     if (step_index == 0) {
         simulation_result_.value().steps.push_back(step);
@@ -187,7 +186,6 @@ void MissionProcessor::run()
     }
     simulation_result_ = SimulationResult{};
     simulation_result_.value().steps.reserve(max_steps_);
-    const auto sim_start_time = std::chrono::steady_clock::now();
 
     const auto interval = std::chrono::milliseconds(
         static_cast<int>(config->simTimeStep * 1000.0F / config->timeScale));
@@ -196,7 +194,7 @@ void MissionProcessor::run()
     while (!stop_requested() && step_index < max_steps_) {
         auto step_start_time = std::chrono::steady_clock::now();
 
-        const StepOutcome step_outcome = runStep(step_index, *config, ammo, initial_ballistic_solution->horizontalDistance, sim_start_time);
+        const StepOutcome step_outcome = runStep(step_index, *config, ammo, initial_ballistic_solution->horizontalDistance);
         if (step_outcome == StepOutcome::TargetReached) {
             simulation_result_.value().outcome = SimulationOutcome::TargetReached;
             return;

@@ -46,8 +46,7 @@ private:
     std::optional<SimulationResult> simulation_result_ = std::nullopt;
 
     StepOutcome runStep(
-        std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float initial_horizontal_distance,
-        std::chrono::steady_clock::time_point sim_start_time);
+        std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float initial_horizontal_distance);
     bool isInFireRange(const DroneTelemetry& drone_telemetry, const Coord& predicted_target, float horizontal_distance, const DroneConfig& config) const;
     static Coord directionVector(float direction);
 
