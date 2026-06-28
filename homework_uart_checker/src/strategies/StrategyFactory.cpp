@@ -22,6 +22,8 @@ std::unique_ptr<ITargetProvider> StrategyFactory::createProvider(ProviderType ty
     switch (type) {
         case ProviderType::THREAD_SAFE_JSON:
             return std::make_unique<ThreadSafeTargetProvider>(param);
+        case ProviderType::UART:
+            return std::make_unique<ThreadSafeTargetProvider>(param);
         default:
             return nullptr;
     }
