@@ -12,6 +12,7 @@ public:
     BackgroundService() = default;
     virtual ~BackgroundService();
 
+    virtual void start();
     virtual void start(std::shared_ptr<std::latch> ready_latch, std::shared_ptr<std::latch> start_gate);
     virtual void stop();
     virtual void join();

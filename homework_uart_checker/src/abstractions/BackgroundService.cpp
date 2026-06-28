@@ -4,6 +4,20 @@ BackgroundService::~BackgroundService() {
     stop();
 }
 
+void BackgroundService::start() {
+    if (worker_.joinable()) {
+        return;
+    }
+
+    stop_requested_ = false;
+
+    worker_ = std::thread([this] {
+        if (!stop_requested()) {
+            run();
+        }
+    });
+}
+
 void BackgroundService::start(std::shared_ptr<std::latch> ready_latch, std::shared_ptr<std::latch> start_gate) {
     if (worker_.joinable()) {
         return;
