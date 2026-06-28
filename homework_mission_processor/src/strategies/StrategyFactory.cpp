@@ -1,9 +1,9 @@
 #include "strategies/StrategyFactory.hpp"
 #include "strategies/FileConfigLoader.hpp"
 #include "strategies/JsonConfigLoader.hpp"
-#include "strategies/JsonTargetProvider.hpp"
 #include "strategies/AnalyticalBallisticSolver.hpp"
 #include "strategies/TableBallisticSolver.hpp"
+#include "strategies/ThreadSafeTargetProvider.hpp"
 
 std::unique_ptr<IConfigLoader> StrategyFactory::createLoader(LoaderType type)
 {
@@ -20,8 +20,8 @@ std::unique_ptr<IConfigLoader> StrategyFactory::createLoader(LoaderType type)
 std::unique_ptr<ITargetProvider> StrategyFactory::createProvider(ProviderType type, const std::string param)
 {
     switch (type) {
-        case ProviderType::JSON:
-            return std::make_unique<JsonTargetProvider>(param);
+        case ProviderType::THREAD_SAFE_JSON:
+            return std::make_unique<ThreadSafeTargetProvider>(param);
         default:
             return nullptr;
     }

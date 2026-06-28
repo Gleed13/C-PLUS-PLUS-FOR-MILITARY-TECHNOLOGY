@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Coord.hpp"
-#include "DroneState.hpp"
+#include "models/DroneTelemetry.hpp"
 
 struct SimulationStep {
-    DroneState drone{};
+    DroneTelemetry droneTelemetry{};
     int targetIndex = -1;
     Coord dropPoint{};
     Coord aimPoint{};
     Coord predictedTarget{};
+    float timeSecSinceStart = 0.0F;
 };

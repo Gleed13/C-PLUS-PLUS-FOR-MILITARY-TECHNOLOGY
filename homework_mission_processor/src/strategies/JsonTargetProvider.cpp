@@ -12,7 +12,7 @@ std::size_t JsonTargetProvider::getTargetCount() const
     return tracks_.size();
 }
 
-std::optional<Coord> JsonTargetProvider::getPosition(std::size_t target_index, float time, float sample_interval) const
+std::optional<Coord> JsonTargetProvider::getPosition(std::size_t target_index, std::vector<float> params) const
 {
     if (tracks_.empty()) {
         ERROR("Targets are not loaded");
@@ -23,6 +23,13 @@ std::optional<Coord> JsonTargetProvider::getPosition(std::size_t target_index, f
         ERROR("Target index out of range");
         return std::nullopt;
     }
+
+    if (params.size() != 2) {
+        ERROR("Invalid parameters for target position query. Expected 2 parameters: time and sample interval");
+        return std::nullopt;
+    }
+    const float time = params.at(0);
+    const float sample_interval = params.at(1);
 
     if (!std::isfinite(time) || time < 0.0F) {
         ERROR("Target query time must be finite and non-negative");

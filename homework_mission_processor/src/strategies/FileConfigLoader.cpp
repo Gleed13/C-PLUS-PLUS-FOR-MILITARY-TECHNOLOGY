@@ -14,11 +14,11 @@ bool FileConfigLoader::tryLoadConfig(const std::string filename)
         return false;
     }
 
-    config_ = std::make_unique<DroneConfig>();
+    config_ = std::make_shared<DroneConfig>();
 
     file >> config_->startPos.x >> config_->startPos.y >> config_->altitude >> config_->initialDir >> config_->attackSpeed >>
         config_->accelPath >> config_->angularSpeed >> config_->turnThreshold >> config_->ammoName >> config_->simTimeStep >>
-        config_->hitRadius >> config_->arrayTimeStep;
+        config_->physicsTimeStep >> config_->hitRadius >> config_->timeScale >> config_->arrayTimeStep;
 
     if (!file) {
         ERROR("Invalid input format");
@@ -34,9 +34,9 @@ bool FileConfigLoader::tryLoadConfig(const std::string filename)
     return true;
 }
 
-DroneConfig* FileConfigLoader::getConfig() const
+std::shared_ptr<DroneConfig> FileConfigLoader::getConfig() const
 {
-    return config_.get();
+    return config_;
 }
 
 Ammo* FileConfigLoader::getAmmoParams() const

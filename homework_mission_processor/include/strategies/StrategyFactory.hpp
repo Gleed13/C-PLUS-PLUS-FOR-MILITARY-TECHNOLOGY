@@ -10,7 +10,7 @@
 class StrategyFactory {
 public:
     enum class LoaderType { FILE, JSON };
-    enum class ProviderType { JSON };
+    enum class ProviderType { JSON, THREAD_SAFE_JSON };
     enum class SolverType { ANALYTICAL, TABLE };
 
     static std::unique_ptr<IConfigLoader> createLoader(LoaderType type);

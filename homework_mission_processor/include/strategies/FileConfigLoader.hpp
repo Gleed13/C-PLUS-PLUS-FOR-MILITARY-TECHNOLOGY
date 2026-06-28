@@ -8,11 +8,11 @@
 class FileConfigLoader : public IConfigLoader {
 public:
     bool tryLoadConfig(const std::string filename) override;
-    DroneConfig* getConfig() const override;
+    std::shared_ptr<DroneConfig> getConfig() const override;
     Ammo* getAmmoParams() const override;
 
 private:
-    std::unique_ptr<DroneConfig> config_;
+    std::shared_ptr<DroneConfig> config_;
     std::unique_ptr<Ammo> ammo_params_;
 
     bool tryLoadAmmoParams();
