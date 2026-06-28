@@ -133,6 +133,38 @@
       "MIMode": "gdb",
       "miDebuggerPath": "/usr/bin/gdb"
     },
+    {
+      "name": "Debug homework_uart_checker",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_uart_checker/build/uart_checker",
+      "args": [
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_uart_checker",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
+    {
+      "name": "Debug homework_uart_checker on RPi",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_uart_checker/build/uart_checker",
+      "args": [
+        // "--uart", "/dev/ttyAMA3",
+        // "--gpiochip", "gpiochip0",
+        // "--start-line", "24",
+        // "--drop-line", "23"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_uart_checker",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    }
   ],
   "inputs": [
     {

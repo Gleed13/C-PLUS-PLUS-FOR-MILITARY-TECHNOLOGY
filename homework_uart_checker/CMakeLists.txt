@@ -6,18 +6,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(FetchContent)
+add_executable(uart_checker src/main.cpp
+    src/features/uart_opener.cpp)
 
-FetchContent_Declare(
-    json
-    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
-)
+target_include_directories(uart_checker PUBLIC include)
 
-FetchContent_MakeAvailable(json)
-
-add_executable(mission_processor_full_cli src/main.cpp)
-
-target_include_directories(mission_processor_full_cli PUBLIC include)
-target_link_libraries(mission_processor_full_cli PRIVATE nlohmann_json::nlohmann_json)
-
-target_compile_options(mission_processor_full_cli PRIVATE -Wall -Wextra -pedantic)
+target_compile_options(uart_checker PRIVATE -Wall -Wextra -pedantic)
