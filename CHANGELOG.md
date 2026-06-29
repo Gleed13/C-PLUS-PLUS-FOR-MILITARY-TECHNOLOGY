@@ -3,6 +3,13 @@
 Усі помітні зміни в цьому репо фіксуються тут.
 Формат - [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/), дати в ISO 8601.
 
+## 2026-06-29
+
+### Added
+
+- Block 5 / Lesson 5.1: додано Docker runtime demos для multi-stage build,
+  `docker build`, `docker run`, volumes і healthcheck.
+
 ## 2026-06-26
 
 ### Added
