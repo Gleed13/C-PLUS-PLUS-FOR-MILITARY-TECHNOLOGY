@@ -3,6 +3,16 @@
 Усі помітні зміни в цьому репо фіксуються тут.
 Формат - [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/), дати в ISO 8601.
 
+## 2026-06-30
+
+### Added
+
+- Block 5 / Lesson 5.3: додано ROS 2 pub/sub demo `demos/lesson_5_3`
+  з пакетом `robot_telemetry`, запуском через `colcon`, CLI-перевірками graph
+  і сценарієм навмисно зламаного topic name.
+- Block 5 / Lesson 5.3: devcontainer переведено на `osrf/ros:jazzy-desktop`
+  і доповнено ROS 2 інструментами для `colcon`, `ament_auto` та `rqt_graph`.
+
 ## 2026-06-26
 
 ### Added
