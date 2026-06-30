@@ -14,6 +14,8 @@ public:
       kTelemetryTopic,
       10,
       [this](const std_msgs::msg::String& msg) { on_telemetry(msg); });
+
+    RCLCPP_INFO(get_logger(), "listening on %s", kTelemetryTopic);
   }
 
 private:

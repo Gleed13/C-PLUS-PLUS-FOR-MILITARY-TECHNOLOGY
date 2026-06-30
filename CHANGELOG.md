@@ -13,6 +13,19 @@
 - Block 5 / Lesson 5.3: devcontainer переведено на `osrf/ros:jazzy-desktop`
   і доповнено ROS 2 інструментами для `colcon`, `ament_auto` та `rqt_graph`.
 
+### Changed
+
+- Block 5 / Lesson 5.3: `status_monitor` друкує стартовий log, а README
+  показує перевірку активного ROS 2 middleware.
+- Block 5 / Lesson 5.3: devcontainer використовує CycloneDDS
+  (`rmw_cyclonedds_cpp`) як default ROS 2 middleware.
+- Block 5 / Lesson 5.3: додано `CYCLONEDDS_URI` config для host-network
+  devcontainer: host interface autodetect, multicast loopback і local peer
+  `127.0.0.1`.
+- Block 5 / Lesson 5.3: devcontainer синхронізує ROS 2 CLI daemon у
+  `postStartCommand`, щоб `ros2 node list` і `ros2 topic list` працювали без
+  додаткових прапорів.
+
 ## 2026-06-29
 
 ### Added

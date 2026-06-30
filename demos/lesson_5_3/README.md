@@ -12,6 +12,28 @@ colcon build --symlink-install --packages-select robot_telemetry
 source install/setup.bash
 ```
 
+У devcontainer CycloneDDS увімкнено за замовчуванням:
+
+```bash
+echo "${RMW_IMPLEMENTATION:-unset}"
+echo "${CYCLONEDDS_URI:-unset}"
+```
+
+Очікувані значення:
+
+```text
+rmw_cyclonedds_cpp
+file:///etc/cyclonedds.xml
+```
+
+CycloneDDS config використовує host network interface autodetect, multicast
+loopback і локальний peer `127.0.0.1`. Якщо значення `unset` або інші,
+перебудувати devcontainer і відкрити новий термінал.
+
+Devcontainer також синхронізує ROS 2 CLI daemon під час `postStartCommand`.
+Тому `ros2 node list` і `ros2 topic list` нижче виконуються у звичайному
+daemon-mode без додаткових прапорів.
+
 ## Запуск
 
 Термінал 1:
@@ -39,24 +61,27 @@ cd "$(git rev-parse --show-toplevel)/demos/lesson_5_3"
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 
-ros2 node list --no-daemon --spin-time 2
-ros2 topic list --no-daemon --spin-time 2
-ros2 topic info /robot/telemetry --verbose --no-daemon --spin-time 2
-ros2 topic echo /robot/telemetry --once --no-daemon --spin-time 2
+ros2 node list
+ros2 topic list
+ros2 topic info /robot/telemetry --verbose
+ros2 topic echo /robot/telemetry --once
 ros2 topic hz /robot/telemetry
 ```
 
 `telemetry_publisher`, `status_monitor` і `ros2 topic hz` працюють до `Ctrl+C`.
+`status_monitor` одразу друкує `listening on /robot/telemetry`. Перші
+`telemetry: ...` мають з'явитися після запуску `telemetry_publisher`.
+
 Якщо `ros2 topic echo` або `ros2 topic hz` нічого не показують, перевірити, що
 publisher запущений і topic називається саме `/robot/telemetry`.
 
 Якщо `ros2 node list` або `ros2 topic list` зависають чи повертають порожній
-результат, скинути ROS 2 daemon і повторити команди без daemon:
+результат, перевірити, що термінал відкрито після rebuild devcontainer і
+активний саме локальний CycloneDDS config:
 
 ```bash
-ros2 daemon stop
-ros2 node list --no-daemon --spin-time 2
-ros2 topic list --no-daemon --spin-time 2
+echo "${RMW_IMPLEMENTATION:-unset}"
+echo "${CYCLONEDDS_URI:-unset}"
 ```
 
 Якщо після цього graph все ще порожній, перевірити однаковий `ROS_DOMAIN_ID` у

@@ -35,12 +35,17 @@ COPY .clang-format /.clang-format
 COPY .clang-tidy /.clang-tidy
 COPY .clangd /.clangd
 COPY .cmake-format.json /.cmake-format.json
+COPY cyclonedds.xml /etc/cyclonedds.xml
 
 # Змінні середовища:
 # - TZ: UTC як нейтральний дефолт. Логи завжди в UTC, без суперечок з
 #   літнім часом різних регіонів.
 # - LC_ALL / LANG / LANGUAGE: en_US.UTF-8 щоб stdout/stderr коректно
 #   виводили UTF-8 текст (кирилиця, emoji, JSON з non-ASCII ключами).
+# - RMW_IMPLEMENTATION: CycloneDDS як default middleware для ROS 2 demo.
+#   Це робить discovery стабільнішим у host-network devcontainer.
+# - CYCLONEDDS_URI: явний DDS config для локального devcontainer graph.
+#   Config лишає autodetect interface і multicast loopback для host network.
 ENV TZ=Etc/UTC
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
@@ -49,6 +54,8 @@ ENV ROS_DISTRO=jazzy
 ENV ROS_VERSION=2
 ENV ROS_PYTHON_VERSION=3
 ENV ROS_DOMAIN_ID=0
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ENV CYCLONEDDS_URI=file:///etc/cyclonedds.xml
 
 # sudo без пароля для dev-контейнера: зручно для apt install на ходу,
 # debug tools, etc. У прод-образах ніколи - там контейнер має жорстко
