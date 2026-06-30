@@ -3,6 +3,23 @@
 Усі помітні зміни в цьому репо фіксуються тут.
 Формат - [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/), дати в ISO 8601.
 
+## 2026-06-26
+
+### Added
+
+- Block 5 / Lesson 5.2 / Homework 12: додано стартовий C2-сервiс для НРК,
+  ArduRover SITL compose stack, QGC-маршрут бiля Лимана та `edge/docker-compose.yml`
+  з готовим `auto_stub` для Guided-сценарiю.
+
+## 2026-05-17
+
+### Added
+
+- Block 2 / Lesson 2.6: додано `docs/code-quality.md` з базовими командами
+  для запуску `clang-format`, `cmake-format`, `clang-tidy`, налаштуванням
+  VS Code auto-format, optional VS Code task для `clang-tidy` і правилами
+  точкового використання `NOLINT` без wrapper scripts.
+
 ## 2026-05-08
 
 ### Changed
