@@ -13,6 +13,13 @@
 - Block 5 / Lesson 5.3: devcontainer переведено на `osrf/ros:jazzy-desktop`
   і доповнено ROS 2 інструментами для `colcon`, `ament_auto` та `rqt_graph`.
 
+## 2026-06-29
+
+### Added
+
+- Block 5 / Lesson 5.1: додано Docker runtime demos для multi-stage build,
+  `docker build`, `docker run`, volumes і healthcheck.
+
 ## 2026-06-26
 
 ### Added
