@@ -10,7 +10,7 @@
 #include "features/Logging.hpp"
 #include "features/UartBridge.hpp"
 
-UartBridge::UartBridge(char* device_name) : device_name_(device_name) {
+UartBridge::UartBridge(const char* device_name) : device_name_(device_name) {
 }
 
 std::optional<dlink::Telemetry> UartBridge::getTelemetry() {
@@ -28,6 +28,17 @@ std::optional<dlink::AmmoCfg> UartBridge::getAmmoConfig() {
 std::optional<dlink::Result>UartBridge::getResult() {
     std::lock_guard<std::mutex> lock(result_mutex_);
     return result_;
+}
+
+void UartBridge::setTargetPacketHandler(std::function<void(const dlink::TargetPos&)> handler) {
+    std::lock_guard<std::mutex> lock(target_packet_handler_mutex_);
+    target_packet_handler_ = std::move(handler);
+}
+
+void UartBridge::clearTargetPacketHandler()
+{
+    std::lock_guard<std::mutex> lock(target_packet_handler_mutex_);
+    target_packet_handler_ = nullptr;
 }
 
 void UartBridge::sendControl(const float accel, const float turn_rate) {
@@ -75,6 +86,11 @@ void UartBridge::setAmmoConfig(dlink::AmmoCfg ammo_config) {
 void UartBridge::setResult(dlink::Result result) {
     std::lock_guard<std::mutex> lock(result_mutex_);
     result_ = result;
+}
+
+void UartBridge::notifyTargetPacketReceived(const dlink::TargetPos& target_position) {
+    std::lock_guard<std::mutex> lock(target_packet_handler_mutex_);
+    target_packet_handler_(target_position);
 }
 
 void UartBridge::handleCompletedPacket(uint8_t type, uint8_t payload[260]) {

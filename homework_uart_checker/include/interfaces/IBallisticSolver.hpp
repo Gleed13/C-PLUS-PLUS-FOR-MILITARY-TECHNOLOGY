@@ -10,5 +10,6 @@
 class IBallisticSolver {
 public:
     virtual std::optional<BallisticSolution> solve(const DroneConfig& drone_config, const Coord& target_position, const Ammo& ammo) = 0;
+    virtual std::optional<float> getAmmoHorizontalDistance(const DroneConfig& drone_config, const Ammo& ammo) = 0;
     virtual ~IBallisticSolver() = default;
 };

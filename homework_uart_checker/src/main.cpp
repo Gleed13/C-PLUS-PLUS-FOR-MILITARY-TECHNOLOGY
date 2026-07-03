@@ -1,15 +1,8 @@
-#include <unistd.h>
-#include <drone_link.h>
-
-int openUart(const char* dev);
-
 #include <utility>
 
-#include "features/DronePhysics.hpp"
 #include "features/Logging.hpp"
 #include "features/MissionProcessor.hpp"
 #include "strategies/StrategyFactory.hpp"
-#include "strategies/ThreadSafeTargetProvider.hpp"
 
 int main(int argc, char** argv)
 {
@@ -19,43 +12,30 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    std::string gpio_chip_name = "/dev/gpiochip0";
+    int gpio_start_line = 24;
+    int gpio_drop_line = 23;
+    std::shared_ptr<UartBridge> uart_bridge = std::make_shared<UartBridge>("/dev/ttyAMA3");
     auto loader = StrategyFactory::createLoader(StrategyFactory::LoaderType::JSON);
-    auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::UART);
+    auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::UART, uart_bridge, argv[2]);
     auto solver = StrategyFactory::createSolver(StrategyFactory::SolverType::TABLE, argv[2]);
-    if (loader == nullptr || provider == nullptr || solver == nullptr) {
+    auto checker_controller = StrategyFactory::createCheckerController(StrategyFactory::CheckerControllerType::MOCK, gpio_chip_name, gpio_start_line, gpio_drop_line);
+    if (loader == nullptr || provider == nullptr || solver == nullptr || checker_controller == nullptr) {
         ERROR("Failed to create processing strategies");
         return 1;
     }
 
-    MissionProcessor mission_processor(std::move(loader), std::move(provider), std::move(solver));
+    MissionProcessor mission_processor(std::move(loader), std::move(provider), std::move(solver), uart_bridge, std::move(checker_controller));
     if (!mission_processor.init(argv[1])) {
         return 1;
     }
 
-    int number_of_services = 2;
-    ThreadSafeTargetProvider* thread_safe_provider = dynamic_cast<ThreadSafeTargetProvider*>(provider.get());
-    if (thread_safe_provider != nullptr) {
-        ++number_of_services;
-    }
-    DronePhysics& drone_physics = mission_processor.getDronePhysics();
-
-    auto ready_latch = std::make_shared<std::latch>(number_of_services);
-    auto start_gate = std::make_shared<std::latch>(1);
-
-    if (thread_safe_provider != nullptr) {
-        thread_safe_provider->start(ready_latch, start_gate);
-    }
-    drone_physics.start(ready_latch, start_gate);
-    mission_processor.start(ready_latch, start_gate);
-
-    ready_latch->wait();     // wait until all workers are ready
-    start_gate->count_down(); // release them together
-
+    mission_processor.start();
     mission_processor.join();
 
     auto result = mission_processor.getSimulationResult();
     if (!result.has_value()) {
-        ERROR("Simulation has failed, no result will be written to the output file");
+        ERROR("Simulation has failed");
         return 1;
     }
 
@@ -72,35 +52,4 @@ int main(int argc, char** argv)
     }
 
     return 1;
-}
-
-int main1(int argc, char** argv)
-{
-    auto fd = openUart("/dev/ttyAMA3");
-
-    dlink::Parser parser; // тримає стан між викликами
-    uint8_t buf[256];
-    while (true) {
-        int n = read(fd, buf, sizeof(buf)); // прочитати доступні байти
-        uint8_t type, len, payload[260];
-        for (int i = 0; i < n; i++) {
-            if (parser.feed(buf[i], type, payload, len)) { // зібрався цілий кадр
-                if (type == dlink::PKT_TELEMETRY) {
-                    dlink::Telemetry telemetry;
-                    memcpy(&telemetry, payload, sizeof telemetry);
-                    // отримані дані телеметрії
-                }
-                if (type == dlink::PKT_TARGET) {
-                    dlink::TargetPos targetPos;
-                    memcpy(&targetPos, payload, sizeof targetPos);
-                    // отримані дані таргету
-                }
-                if (type == dlink::PKT_AMMO) {
-                    dlink::AmmoCfg ammoCfg;
-                    memcpy(&ammoCfg, payload, sizeof ammoCfg);
-                    // отримані дані снаряду
-                }
-            }
-        }
-    }
 }

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <optional>
 
@@ -14,7 +15,7 @@ std::optional<TargetSelection> TargetSelector::select(const DroneTelemetry& dron
                                                       float simulation_time,
                                                       const DroneConfig& config,
                                                       const Ammo& ammo,
-                                                      const ITargetProvider& target_provider,
+                                                      const ITargetMotionProvider& target_provider,
                                                       IBallisticSolver& ballistic_solver) const
 {
     if (!std::isfinite(simulation_time) || simulation_time < 0.0F) {
@@ -28,7 +29,8 @@ std::optional<TargetSelection> TargetSelector::select(const DroneTelemetry& dron
     current_config.startPos = droneTelemetry.position;
     current_config.initialDir = droneTelemetry.direction;
 
-    for (std::size_t target_index = 0; target_index < target_provider.getTargetCount(); ++target_index) {
+    std::size_t target_count = target_provider.getTargetCount();
+    for (std::size_t target_index = 0; target_index < target_count; ++target_index) {
         const auto target = target_provider.getTarget(target_index);
         if (!target.has_value()) {
             continue;

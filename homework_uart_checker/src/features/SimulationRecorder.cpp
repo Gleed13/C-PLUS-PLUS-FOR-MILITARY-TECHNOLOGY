@@ -13,6 +13,15 @@ nlohmann::json coordToJson(const Coord& coord)
     return {{"x", coord.x}, {"y", coord.y}};
 }
 
+nlohmann::json coordToJson(const std::optional<Coord>& coord)
+{
+    if (!coord.has_value()) {
+        return nullptr; // JSON null
+    }
+
+    return coordToJson(*coord);
+}
+
 }    // namespace
 
 bool SimulationRecorder::writeJson(const SimulationResult& result, const std::string& output_path) const

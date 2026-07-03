@@ -7,26 +7,26 @@
 
 #include "abstractions/BackgroundService.hpp"
 #include "features/DroneMotionProfile.hpp"
-#include "features/DronePhysics.hpp"
 #include "features/TargetSelector.hpp"
+#include "features/UartBridge.hpp"
 #include "interfaces/IBallisticSolver.hpp"
+#include "interfaces/ICheckerController.hpp"
 #include "interfaces/IConfigLoader.hpp"
-#include "interfaces/ITargetProvider.hpp"
+#include "interfaces/ITargetMotionProvider.hpp"
 #include "models/SimulationResult.hpp"
 
 class MissionProcessor final : public BackgroundService {
 public:
     MissionProcessor(std::unique_ptr<IConfigLoader> config_loader,
-                     std::unique_ptr<ITargetProvider> target_provider,
-                     std::unique_ptr<IBallisticSolver> solver);
+                     std::unique_ptr<ITargetMotionProvider> target_provider,
+                     std::unique_ptr<IBallisticSolver> solver,
+                     std::shared_ptr<UartBridge> uart_bridge,
+                     std::unique_ptr<ICheckerController> checker_controller);
     bool init(const std::string& config_path, std::size_t max_steps = 10000);
     void changeSolver(std::unique_ptr<IBallisticSolver> new_solver);
-    void start(std::shared_ptr<std::latch> ready_latch, std::shared_ptr<std::latch> start_gate) override;
+    void start() override;
     void reset();
     std::optional<SimulationResult> getSimulationResult();
-
-public:
-    DronePhysics& getDronePhysics() { return drone_physics_; }
 
 private:
     static constexpr float kHitRadiusCoefficient = 0.5F;
@@ -34,11 +34,12 @@ private:
     enum class StepOutcome { Continue, TargetReached, Failed };
 
     std::unique_ptr<IConfigLoader> config_loader_;
-    std::unique_ptr<ITargetProvider> target_provider_;
+    std::unique_ptr<ITargetMotionProvider> target_provider_;
     std::unique_ptr<IBallisticSolver> solver_;
+    std::shared_ptr<UartBridge> uart_bridge_;
+    std::unique_ptr<ICheckerController> checker_controller_;
 
     DroneMotionProfile motion_profile_;
-    DronePhysics drone_physics_;
     TargetSelector target_selector_;
     bool initialized_ = false;
     int current_target_index_ = -1;

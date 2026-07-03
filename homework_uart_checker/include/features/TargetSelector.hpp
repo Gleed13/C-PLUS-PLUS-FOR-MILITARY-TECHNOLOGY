@@ -5,7 +5,7 @@
 #include "features/DroneMotionProfile.hpp"
 #include "features/TrajectoryEstimator.hpp"
 #include "interfaces/IBallisticSolver.hpp"
-#include "interfaces/ITargetProvider.hpp"
+#include "interfaces/ITargetMotionProvider.hpp"
 #include "models/Ammo.hpp"
 #include "models/DroneConfig.hpp"
 #include "models/DroneTelemetry.hpp"
@@ -19,7 +19,7 @@ public:
                                           float simulation_time,
                                           const DroneConfig& config,
                                           const Ammo& ammo,
-                                          const ITargetProvider& target_provider,
+                                          const ITargetMotionProvider& target_provider,
                                           IBallisticSolver& ballistic_solver) const;
 
 private:

@@ -30,6 +30,19 @@ std::optional<BallisticSolution> AnalyticalBallisticSolver::solve(const DroneCon
     return BallisticSolution{.dropPoint = drop_point, .fallTime = t, .horizontalDistance = h};
 }
 
+std::optional<float> AnalyticalBallisticSolver::getAmmoHorizontalDistance(const DroneConfig& drone_config, const Ammo& ammo)
+{
+    float t = NAN;
+    float h = NAN;
+    if (!tryCalculateFreeFallTime(drone_config.altitude, drone_config.attackSpeed, ammo.mass, ammo.drag, ammo.lift, &t)) {
+        return std::nullopt;
+    }
+    if (!tryCalculateHorizontalDistance(t, drone_config.attackSpeed, ammo.mass, ammo.drag, ammo.lift, &h)) {
+        return std::nullopt;
+    }
+    return h;
+}
+
 bool AnalyticalBallisticSolver::tryCalculateFreeFallTime(float zd, float attackSpeed, float mass, float drag, float lift, float* t)
 {
     float a = drag * kGravity * mass - 2 * drag * drag * lift * attackSpeed;

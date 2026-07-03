@@ -8,16 +8,20 @@
 #include "features/Logging.hpp"
 #include "features/MissionProcessor.hpp"
 #include "models/DroneConfig.hpp"
+#include "models/DroneState.hpp"
 #include "models/DroneTelemetry.hpp"
 #include "models/SimulationResult.hpp"
 
 MissionProcessor::MissionProcessor(std::unique_ptr<IConfigLoader> config_loader,
-                                   std::unique_ptr<ITargetProvider> target_provider,
-                                   std::unique_ptr<IBallisticSolver> solver)
+                                   std::unique_ptr<ITargetMotionProvider> target_provider,
+                                   std::unique_ptr<IBallisticSolver> solver,
+                                   std::shared_ptr<UartBridge> uart_bridge,
+                                   std::unique_ptr<ICheckerController> checker_controller)
     : config_loader_(std::move(config_loader))
     , target_provider_(std::move(target_provider))
     , solver_(std::move(solver))
-    , drone_physics_(motion_profile_)
+    , uart_bridge_(uart_bridge)
+    , checker_controller_(std::move(checker_controller))
     , target_selector_(motion_profile_)
 {
 }
@@ -38,11 +42,12 @@ bool MissionProcessor::init(const std::string& config_path, std::size_t max_step
         initialized_ = false;
         return false;
     }
-    if (!target_provider_->init(config) || !motion_profile_.init(*config) || !drone_physics_.init(config)) {
+    if (!target_provider_->init(config) || !motion_profile_.init(*config)) {
         ERROR("Failed to initialize simulation features");
         initialized_ = false;
         return false;
     }
+    checker_controller_->init();
 
     current_target_index_ = -1;
     initialized_ = true;
@@ -52,23 +57,27 @@ bool MissionProcessor::init(const std::string& config_path, std::size_t max_step
 MissionProcessor::StepOutcome MissionProcessor::runStep(
     std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float horizontal_distance)
 {
-    auto drone_telemetry = drone_physics_.getTelemetry();
+    auto telemetry = uart_bridge_->getTelemetry();
+    auto drone_telemetry = telemetry.has_value()
+        ? DroneTelemetry{
+              .position = Coord{telemetry->x, telemetry->y},
+              .direction = telemetry->dir,
+              .speed = telemetry->speed,
+              .status = static_cast<DroneStatus>(telemetry->state),
+              .timeSecSinceStart = telemetry->t_ms * 1000.0F}
+        : DroneTelemetry{};
     SimulationStep step;
     step.droneTelemetry = drone_telemetry;
     step.targetIndex = current_target_index_;
     step.aimPoint = drone_telemetry.position + directionVector(drone_telemetry.direction) * horizontal_distance;
     step.timeSecSinceStart = drone_telemetry.timeSecSinceStart;
 
-    if (step_index == 0) {
-        simulation_result_.value().steps.push_back(step);
-        return StepOutcome::Continue;
-    }
-
     const float simulation_time = static_cast<float>(step_index) * config.simTimeStep * config.timeScale;
     const auto selection = target_selector_.select(drone_telemetry, simulation_time, config, ammo, *target_provider_, *solver_);
     if (!selection.has_value()) {
-        ERROR("Failed to select a target at simulation step " << step_index);
-        return StepOutcome::Failed;
+        WARNING("No target selected at simulation step " << step_index);
+        simulation_result_.value().steps.push_back(step);
+        return StepOutcome::Continue;
     }
     current_target_index_ = static_cast<int>(selection->targetIndex);
 
@@ -104,13 +113,11 @@ MissionProcessor::StepOutcome MissionProcessor::runStep(
     simulation_result_.value().steps.push_back(step);
 
     if (isInFireRange(drone_telemetry, predicted_target_pos, predicted_solution->horizontalDistance, config)) {
+        checker_controller_->drop();
         return StepOutcome::TargetReached;
     }
-
-    if (!drone_physics_.updateDestination(&predicted_solution->dropPoint)) {
-        ERROR("Failed to update drone movement at simulation step " << step_index);
-        return StepOutcome::Failed;
-    }
+    // Update the drone's movement based on the predicted drop point
+    
 
     return StepOutcome::Continue;
 }
@@ -120,7 +127,7 @@ void MissionProcessor::changeSolver(std::unique_ptr<IBallisticSolver> new_solver
     solver_ = std::move(new_solver);
 }
 
-void MissionProcessor::start(std::shared_ptr<std::latch> ready_latch, std::shared_ptr<std::latch> start_gate)
+void MissionProcessor::start()
 {
     if (!initialized_ || max_steps_ == 0) {
         ERROR("Mission processor is not initialized or max steps is zero");
@@ -128,7 +135,8 @@ void MissionProcessor::start(std::shared_ptr<std::latch> ready_latch, std::share
         return;
     }
 
-    BackgroundService::start(ready_latch, start_gate);
+    checker_controller_->start(); //start the checker controller before the simulation loop
+    BackgroundService::start();
 }
 
 void MissionProcessor::reset()
@@ -140,7 +148,6 @@ void MissionProcessor::reset()
     if (auto* resettable = dynamic_cast<IResettable*>(target_provider_.get())) {
         resettable->reset();
     }
-    drone_physics_.reset();
     current_target_index_ = -1;
 }
 
@@ -174,14 +181,9 @@ void MissionProcessor::run()
 {
     auto config = config_loader_->getConfig();
     const Ammo& ammo = *config_loader_->getAmmoParams();
-    const auto initial_target = target_provider_->getPosition(0, {});
-    if (!initial_target.has_value()) {
-        ERROR("Failed to load the initial target position");
-        return;
-    }
-    const auto initial_ballistic_solution = solver_->solve(*config, initial_target.value(), ammo);
-    if (!initial_ballistic_solution.has_value()) {
-        ERROR("Failed to calculate initial ballistic parameters");
+    const auto ammo_horizontal_distance = solver_->getAmmoHorizontalDistance(*config, ammo);
+    if (!ammo_horizontal_distance.has_value()) {
+        ERROR("Failed to calculate ammo horizontal distance");
         return;
     }
     simulation_result_ = SimulationResult{};
@@ -194,7 +196,7 @@ void MissionProcessor::run()
     while (!stop_requested() && step_index < max_steps_) {
         auto step_start_time = std::chrono::steady_clock::now();
 
-        const StepOutcome step_outcome = runStep(step_index, *config, ammo, initial_ballistic_solution->horizontalDistance);
+        const StepOutcome step_outcome = runStep(step_index, *config, ammo, ammo_horizontal_distance.value());
         if (step_outcome == StepOutcome::TargetReached) {
             simulation_result_.value().outcome = SimulationOutcome::TargetReached;
             return;

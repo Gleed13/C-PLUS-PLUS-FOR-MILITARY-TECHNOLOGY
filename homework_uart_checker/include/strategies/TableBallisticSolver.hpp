@@ -14,6 +14,7 @@ public:
     bool isLoaded() const;
 
     std::optional<BallisticSolution> solve(const DroneConfig& drone_config, const Coord& target_position, const Ammo& ammo) override;
+    std::optional<float> getAmmoHorizontalDistance(const DroneConfig& drone_config, const Ammo& ammo) override;
 
 private:
     struct TableResult {

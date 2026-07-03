@@ -8,7 +8,7 @@
 
 #include "abstractions/BackgroundService.hpp"
 #include "abstractions/IResettable.hpp"
-#include "interfaces/ITargetProvider.hpp"
+#include "interfaces/ITargetMotionProvider.hpp"
 #include "models/Coord.hpp"
 #include "models/DroneConfig.hpp"
 #include "models/Target.hpp"
@@ -16,7 +16,7 @@
 
 using json = nlohmann::json;
 
-class ThreadSafeTargetProvider : public BackgroundService, public ITargetProvider, public IResettable {
+class ThreadSafeTargetProvider : public BackgroundService, public ITargetMotionProvider, public IResettable {
 public:
     ~ThreadSafeTargetProvider() override;
     ThreadSafeTargetProvider(const std::string config_path);

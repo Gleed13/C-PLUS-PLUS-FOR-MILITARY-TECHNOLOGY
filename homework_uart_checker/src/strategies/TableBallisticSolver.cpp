@@ -77,6 +77,23 @@ std::optional<BallisticSolution> TableBallisticSolver::solve(const DroneConfig& 
     return BallisticSolution{.dropPoint = drop_point, .fallTime = result->fallTime, .horizontalDistance = result->horizontalDistance};
 }
 
+std::optional<float> TableBallisticSolver::getAmmoHorizontalDistance(const DroneConfig& drone_config, const Ammo& ammo)
+{
+    if (!loaded_) {
+        ERROR("Ballistic table is not loaded");
+        return std::nullopt;
+    }
+
+    const auto result = lookup(drone_config.altitude, drone_config.attackSpeed, ammo.mass, ammo.drag, ammo.lift);
+
+    if (!result.has_value() || result->fallTime <= 0.0F || result->horizontalDistance <= 0.0F) {
+        ERROR("Failed to interpolate ballistic table values");
+        return std::nullopt;
+    }
+
+    return result->horizontalDistance;
+}
+
 bool TableBallisticSolver::load(const std::string& table_path)
 {
     std::ifstream input{table_path};

@@ -16,23 +16,25 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 add_executable(uart_checker src/main.cpp
-    src/features/uart_opener.cpp
     src/abstractions/BackgroundService.cpp
     src/strategies/StrategyFactory.cpp
-    src/strategies/FileConfigLoader.cpp
     src/strategies/JsonConfigLoader.cpp
-    src/strategies/ThreadSafeTargetProvider.cpp
-    src/strategies/AnalyticalBallisticSolver.cpp
+    src/strategies/UartTargetProvider.cpp
     src/strategies/TableBallisticSolver.cpp
     src/features/DroneMotionProfile.cpp
     src/features/DroneMovementStates.cpp
-    src/features/DronePhysics.cpp
     src/features/TrajectoryEstimator.cpp
     src/features/TargetSelector.cpp
     src/features/SimulationRecorder.cpp
+    src/features/UartBridge.cpp
+    src/features/MockCheckerController.cpp
     src/features/MissionProcessor.cpp)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GPIODCXX REQUIRED IMPORTED_TARGET libgpiodcxx)
+
 target_include_directories(uart_checker PUBLIC include)
+target_link_libraries(uart_checker PRIVATE PkgConfig::GPIODCXX)
 target_link_libraries(uart_checker PRIVATE nlohmann_json::nlohmann_json)
 
 target_compile_options(uart_checker PRIVATE -Wall -Wextra -pedantic)
