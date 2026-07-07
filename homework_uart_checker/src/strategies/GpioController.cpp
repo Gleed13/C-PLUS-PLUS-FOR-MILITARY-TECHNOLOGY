@@ -1,6 +1,7 @@
 #include <string>
+#include <thread>
 
-#include "features/GpioController.hpp"
+#include "strategies/GpioController.hpp"
 
 GpioController::~GpioController() {
     try {
@@ -10,7 +11,7 @@ GpioController::~GpioController() {
     }
 }
 
-GpioController::GpioController(const std::string& chip_path, const int start_line, const int drop_line) :
+GpioController::GpioController(const std::string& chip_path, const unsigned start_line, const unsigned drop_line) :
     start_line_(start_line), drop_line_(drop_line), chip_path_(chip_path) {
 }
 

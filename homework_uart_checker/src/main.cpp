@@ -1,5 +1,7 @@
 #include <chrono>
 #include <cmath>
+#include <cstddef>
+#include <optional>
 #include <utility>
 #include <thread>
 
@@ -11,18 +13,19 @@ int main(int argc, char** argv)
 {
     if (argc != 3) {
         ERROR("Usage: " << argv[0]
-                        << " <ballistic_table_file>");
+                        << " <config_input_file> <ballistic_table_file>");
         return 1;
     }
 
+    //TODO: Make these parameters configurable via command line arguments or config file
     std::string gpio_chip_name = "/dev/gpiochip0";
-    int gpio_start_line = 24;
-    int gpio_drop_line = 23;
+    unsigned gpio_start_line = 24;
+    unsigned gpio_drop_line = 23;
     std::shared_ptr<UartBridge> uart_bridge = std::make_shared<UartBridge>("/dev/ttyAMA3");
     auto loader = StrategyFactory::createLoader(StrategyFactory::LoaderType::JSON);
-    auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::UART, uart_bridge, argv[2]);
+    auto provider = StrategyFactory::createProvider(StrategyFactory::ProviderType::UART, uart_bridge, std::nullopt);
     auto solver = StrategyFactory::createSolver(StrategyFactory::SolverType::TABLE, argv[2]);
-    auto checker_controller = StrategyFactory::createCheckerController(StrategyFactory::CheckerControllerType::MOCK, gpio_chip_name, gpio_start_line, gpio_drop_line);
+    auto checker_controller = StrategyFactory::createCheckerController(StrategyFactory::CheckerControllerType::GPIO, gpio_chip_name, gpio_start_line, gpio_drop_line);
     if (loader == nullptr || provider == nullptr || solver == nullptr || checker_controller == nullptr) {
         ERROR("Failed to create processing strategies");
         return 1;

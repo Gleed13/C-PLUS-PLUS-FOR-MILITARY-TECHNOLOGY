@@ -171,10 +171,8 @@
       "request": "launch",
       "program": "${workspaceFolder}/homework_uart_checker/build/uart_checker",
       "args": [
-        // "--uart", "/dev/ttyAMA3",
-        // "--gpiochip", "gpiochip0",
-        // "--start-line", "24",
-        // "--drop-line", "23"
+        "data/config.json",
+        "data/ballistic_table.txt",
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/homework_uart_checker",

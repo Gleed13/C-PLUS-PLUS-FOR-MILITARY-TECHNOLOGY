@@ -17,7 +17,7 @@ public:
     enum class CheckerControllerType { GPIO, MOCK };
 
     static std::unique_ptr<IConfigLoader> createLoader(LoaderType type);
-    static std::unique_ptr<ITargetMotionProvider> createProvider(ProviderType type, std::shared_ptr<UartBridge> uart_bridge, const std::string param = {});
+    static std::unique_ptr<ITargetMotionProvider> createProvider(ProviderType type, std::shared_ptr<UartBridge> uart_bridge, const std::optional<std::string> param = {});
     static std::unique_ptr<IBallisticSolver> createSolver(SolverType type, const std::string& param = "");
-    static std::unique_ptr<ICheckerController> createCheckerController(CheckerControllerType type, const std::string& chip_path, const int start_line, const int drop_line);
+    static std::unique_ptr<ICheckerController> createCheckerController(CheckerControllerType type, const std::string& chip_path, const unsigned start_line, const unsigned drop_line);
 };
