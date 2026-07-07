@@ -35,7 +35,6 @@ private:
     std::mutex telemetry_mutex_;
 
     void updateTelemetry(DroneTelemetry telemetry);
-    float angleToTarget(const Coord& target_position);
     void updatePosition();
     std::optional<DroneMovementContext> createMovementContext();
 

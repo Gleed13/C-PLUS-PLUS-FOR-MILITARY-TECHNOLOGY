@@ -1,4 +1,7 @@
+#include <chrono>
+#include <cmath>
 #include <utility>
+#include <thread>
 
 #include "features/Logging.hpp"
 #include "features/MissionProcessor.hpp"
@@ -39,9 +42,26 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    size_t retries = 0;
     switch (result.value().outcome) {
         case SimulationOutcome::TargetReached:
             LOG("Simulation reached firing range in " << result.value().steps.size() << " steps");
+            for (retries = 0; retries < 5; ++retries) {
+                // Use integer arithmetic for milliseconds (std::pow returns double)
+                std::this_thread::sleep_for(std::chrono::milliseconds((1u << retries) * 100u));
+                auto result = uart_bridge->getResult();
+                if (!result.has_value()) {
+                    LOG("Received result from checker: hit:" << static_cast<int>(result.value().hit)
+                        << " targetId:" << static_cast<int>(result.value().targetId)
+                        << " miss_m:" << result.value().miss_m
+                        << " drop_t_ms:" << result.value().drop_t_ms);
+                    break;
+                }
+            }
+            if (retries == 5) {
+                ERROR("Failed to receive result from checker after 5 retries");
+                return 1;
+            }
             return 0;
         case SimulationOutcome::MaxStepsReached:
             ERROR("Simulation reached the maximum step count: " << result.value().steps.size());

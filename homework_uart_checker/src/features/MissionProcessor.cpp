@@ -5,12 +5,16 @@
 #include <utility>
 
 #include "abstractions/IResettable.hpp"
+#include "drone_link.h"
+#include "features/DroneMovementStates.hpp"
 #include "features/Logging.hpp"
 #include "features/MissionProcessor.hpp"
 #include "models/DroneConfig.hpp"
 #include "models/DroneState.hpp"
 #include "models/DroneTelemetry.hpp"
 #include "models/SimulationResult.hpp"
+#include "utils/ControlUtils.hpp"
+#include "utils/UartUtils.hpp"
 
 MissionProcessor::MissionProcessor(std::unique_ptr<IConfigLoader> config_loader,
                                    std::unique_ptr<ITargetMotionProvider> target_provider,
@@ -117,7 +121,17 @@ MissionProcessor::StepOutcome MissionProcessor::runStep(
         return StepOutcome::TargetReached;
     }
     // Update the drone's movement based on the predicted drop point
-    
+    const Coord target_position = predicted_solution->dropPoint.intermPoint.value_or(predicted_solution->dropPoint.firePoint);
+    DroneState drone_state{.position = drone_telemetry.position, .direction = drone_telemetry.direction, .speed = drone_telemetry.speed, .status = drone_telemetry.status};
+    const float target_angle = ControlUtils::angleToTarget(target_position, drone_state);
+    DroneMovementContext context{.drone = drone_state,
+                                 .config = current_config,
+                                 .motionProfile = motion_profile_,
+                                 .destination = predicted_solution->dropPoint,
+                                 .targetPosition = target_position,
+                                 .targetAngle = target_angle};
+    auto control = UartUtils::getControlFromContext(context, config.simTimeStep);
+    uart_bridge_->sendControl(control);
 
     return StepOutcome::Continue;
 }

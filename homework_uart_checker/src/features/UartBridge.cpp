@@ -41,8 +41,7 @@ void UartBridge::clearTargetPacketHandler()
     target_packet_handler_ = nullptr;
 }
 
-void UartBridge::sendControl(const float accel, const float turn_rate) {
-    dlink::Control control{ accel, turn_rate }; // обидва float у [-1..1]
+void UartBridge::sendControl(dlink::Control control) {
     uint8_t out[64];
     size_t m = encode(dlink::PKT_CONTROL, &control, sizeof control, out);
     write(file_descriptor_, out, m);

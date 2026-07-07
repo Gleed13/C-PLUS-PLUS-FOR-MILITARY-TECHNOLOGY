@@ -2,13 +2,13 @@
 #include <cmath>
 #include <memory>
 #include <mutex>
-#include <utility>
 
 #include "abstractions/BackgroundService.hpp"
 #include "features/DroneMovementStates.hpp"
 #include "features/Logging.hpp"
 #include "models/DroneTelemetry.hpp"
 #include "models/DropPoint.hpp"
+#include "utils/ControlUtils.hpp"
 #include "features/DronePhysics.hpp"
 
 DronePhysics::DronePhysics(const DroneMotionProfile& motion_profile)
@@ -85,23 +85,6 @@ DroneTelemetry DronePhysics::getTelemetry()
     return drone_telemetry_;
 }
 
-float DronePhysics::angleToTarget(const Coord& target_position)
-{
-    const Coord to_target = target_position - drone_.position;
-    const float target_length = std::hypot(to_target.x, to_target.y);
-    if (target_length == 0.0F) {
-        return 0.0F;
-    }
-
-    const Coord drone_direction{std::cos(drone_.direction), std::sin(drone_.direction)};
-    const Coord normalized_target{to_target.x / target_length, to_target.y / target_length};
-
-    const float cross = drone_direction.x * normalized_target.y - drone_direction.y * normalized_target.x;
-    const float dot = drone_direction.x * normalized_target.x + drone_direction.y * normalized_target.y;
-
-    return std::atan2(cross, dot);
-}
-
 void DronePhysics::updatePosition()
 {
     drone_.position.x += drone_.speed * std::cos(drone_.direction) * config_->physicsTimeStep;
@@ -116,7 +99,7 @@ std::optional<DroneMovementContext> DronePhysics::createMovementContext()
     }
 
     const Coord target_position = current_destination_->intermPoint.value_or(current_destination_->firePoint);
-    const float target_angle = angleToTarget(target_position);
+    const float target_angle = ControlUtils::angleToTarget(target_position, drone_);
     DroneMovementContext context{.drone = drone_,
                                  .config = *config_,
                                  .motionProfile = motion_profile_,

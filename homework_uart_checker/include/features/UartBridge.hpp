@@ -21,7 +21,7 @@ public:
     void setTargetPacketHandler(std::function<void(const dlink::TargetPos&)> handler);
     void clearTargetPacketHandler();
 
-    void sendControl(const float accel, const float turn_rate);
+    void sendControl(dlink::Control control);
 
     void start() override;
 
