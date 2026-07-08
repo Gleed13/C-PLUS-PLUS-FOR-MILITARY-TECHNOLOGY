@@ -2,6 +2,7 @@
 #include <thread>
 
 #include "strategies/GpioController.hpp"
+#include "features/Logging.hpp"
 
 GpioController::~GpioController() {
     try {
@@ -32,11 +33,13 @@ void GpioController::init() {
 }
 
 void GpioController::start() {
+    LOG("Starting the drone by setting the start GPIO line to ACTIVE");
     ensureInitialized();
     request_->set_value(gpiod::line::offset{start_line_}, gpiod::line::value::ACTIVE);
 }
 
 void GpioController::drop() {
+    LOG("Dropping the drone by setting the drop GPIO line to ACTIVE");
     ensureInitialized();
 
     using namespace std::chrono_literals;

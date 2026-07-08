@@ -58,6 +58,59 @@ bool MissionProcessor::init(const std::string& config_path, std::size_t max_step
     return true;
 }
 
+void MissionProcessor::changeSolver(std::unique_ptr<IBallisticSolver> new_solver)
+{
+    solver_ = std::move(new_solver);
+}
+
+void MissionProcessor::start()
+{
+    if (!initialized_ || max_steps_ == 0) {
+        ERROR("Mission processor is not initialized or max steps is zero");
+        simulation_result_ = std::nullopt;
+        return;
+    }
+
+    checker_controller_->start(); //start the checker controller before the simulation loop
+    BackgroundService::start();
+}
+
+void MissionProcessor::reset()
+{
+    if (!initialized_) {
+        return;
+    }
+
+    if (auto* resettable = dynamic_cast<IResettable*>(target_provider_.get())) {
+        resettable->reset();
+    }
+    current_target_index_ = -1;
+}
+
+std::optional<SimulationResult> MissionProcessor::getSimulationResult()
+{
+    if (!simulation_result_.has_value()) {
+        ERROR("Simulation result is not available");
+        return std::nullopt;
+    }
+    return simulation_result_.value();
+}
+
+void MissionProcessor::fixTelemetryStateIfNeeded(DroneTelemetry& telemetry, const DroneConfig& config) {
+    if (telemetry.speed < 0.01f && telemetry.status != DroneStatus::Stopped && telemetry.status != DroneStatus::Turning) {
+        WARNING("Telemetry speed is near zero, but status is not Stopped. Fixing status to Stopped.");
+        telemetry.status = DroneStatus::Stopped;
+    }
+    else if (telemetry.speed < config.attackSpeed && telemetry.status != DroneStatus::Accelerating && telemetry.status != DroneStatus::Decelerating) {
+        WARNING("Telemetry speed is below attackSpeed, but status is not Accelerating or Decelerating. Fixing status to Accelerating.");
+        telemetry.status = DroneStatus::Accelerating;
+    }
+    else if (telemetry.speed >= config.attackSpeed && telemetry.status != DroneStatus::Moving) {
+        WARNING("Telemetry speed is at or above attackSpeed, but status is not Moving. Fixing status to Moving.");
+        telemetry.status = DroneStatus::Moving;
+    }
+}
+
 MissionProcessor::StepOutcome MissionProcessor::runStep(
     std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float horizontal_distance)
 {
@@ -70,6 +123,7 @@ MissionProcessor::StepOutcome MissionProcessor::runStep(
               .status = static_cast<DroneStatus>(telemetry->state),
               .timeSecSinceStart = telemetry->t_ms * 1000.0F}
         : DroneTelemetry{};
+    fixTelemetryStateIfNeeded(drone_telemetry, config);
     SimulationStep step;
     step.droneTelemetry = drone_telemetry;
     step.targetIndex = current_target_index_;
@@ -134,44 +188,6 @@ MissionProcessor::StepOutcome MissionProcessor::runStep(
     uart_bridge_->sendControl(control);
 
     return StepOutcome::Continue;
-}
-
-void MissionProcessor::changeSolver(std::unique_ptr<IBallisticSolver> new_solver)
-{
-    solver_ = std::move(new_solver);
-}
-
-void MissionProcessor::start()
-{
-    if (!initialized_ || max_steps_ == 0) {
-        ERROR("Mission processor is not initialized or max steps is zero");
-        simulation_result_ = std::nullopt;
-        return;
-    }
-
-    checker_controller_->start(); //start the checker controller before the simulation loop
-    BackgroundService::start();
-}
-
-void MissionProcessor::reset()
-{
-    if (!initialized_) {
-        return;
-    }
-
-    if (auto* resettable = dynamic_cast<IResettable*>(target_provider_.get())) {
-        resettable->reset();
-    }
-    current_target_index_ = -1;
-}
-
-std::optional<SimulationResult> MissionProcessor::getSimulationResult()
-{
-    if (!simulation_result_.has_value()) {
-        ERROR("Simulation result is not available");
-        return std::nullopt;
-    }
-    return simulation_result_.value();
 }
 
 bool MissionProcessor::isInFireRange(const DroneTelemetry& drone_telemetry, const Coord& predicted_target, float horizontal_distance, const DroneConfig& config) const

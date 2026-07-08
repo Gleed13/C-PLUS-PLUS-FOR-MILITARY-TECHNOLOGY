@@ -63,6 +63,10 @@ std::optional<Coord> UartTargetProvider::getPosition(std::size_t target_index, s
 
 std::optional<Target> UartTargetProvider::getTarget(std::size_t target_index) const {
     std::lock_guard<std::mutex> lock(targets_mutex_);
+    if (target_index >= targets_.size()) {
+        DEBUG("Target index " + std::to_string(target_index) + " is out of bounds, max index is " + std::to_string(targets_.size() - 1));
+        return std::nullopt;
+    }
     return targets_[target_index];
 }
 

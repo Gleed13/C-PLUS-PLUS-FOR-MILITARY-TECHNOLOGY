@@ -42,6 +42,7 @@ void UartBridge::clearTargetPacketHandler()
 }
 
 void UartBridge::sendControl(dlink::Control control) {
+    LOG("Sending control packet: accel=" << control.accel << ", turnRate=" << control.turnRate);
     uint8_t out[64];
     size_t m = encode(dlink::PKT_CONTROL, &control, sizeof control, out);
     write(file_descriptor_, out, m);
@@ -94,6 +95,7 @@ void UartBridge::notifyTargetPacketReceived(const dlink::TargetPos& target_posit
 
 void UartBridge::handleCompletedPacket(uint8_t type, uint8_t payload[260]) {
     if (type == dlink::PKT_TELEMETRY) {
+        DEBUG("Telemetry packet received");
         dlink::Telemetry telemetry;
         memcpy(&telemetry, payload, sizeof telemetry);
         updateTelemetry(telemetry);
@@ -101,6 +103,7 @@ void UartBridge::handleCompletedPacket(uint8_t type, uint8_t payload[260]) {
     }
 
     if (type == dlink::PKT_TARGET) {
+        DEBUG("Target position packet received");
         if (!config_inited_) {
             WARNING("target position data received before receiving ammo config -> will be skipped");
             return;
@@ -108,10 +111,12 @@ void UartBridge::handleCompletedPacket(uint8_t type, uint8_t payload[260]) {
         dlink::TargetPos targetPos;
         memcpy(&targetPos, payload, sizeof targetPos);
         updateTargetPosition(targetPos);
+        notifyTargetPacketReceived(targetPos);
         return;
     }
 
     if (type == dlink::PKT_AMMO) {
+        DEBUG("Ammo config packet received");
         dlink::AmmoCfg ammoCfg;
         memcpy(&ammoCfg, payload, sizeof ammoCfg);
         setAmmoConfig(ammoCfg);
@@ -125,12 +130,26 @@ void UartBridge::handleCompletedPacket(uint8_t type, uint8_t payload[260]) {
     }
 
     if (type == dlink::PKT_RESULT) {
+        DEBUG("Result packet received");
         if (result_.has_value()) {
             WARNING("another PKT_RESULT was received after first one");
         }
         dlink::Result result;
         memcpy(&result, payload, sizeof result);
         setResult(result);
+        return;
+    }
+
+    if (type == dlink::PKT_CONFIG) {
+        DEBUG("Config packet received");
+        dlink::DroneCfg droneCfg;
+        memcpy(&droneCfg, payload, sizeof droneCfg);
+        DEBUG("Received drone config: attackSpeed=" << droneCfg.attackSpeed
+            << ", accelerationPath=" << droneCfg.accelerationPath
+            << ", angularSpeed=" << droneCfg.angularSpeed
+            << ", turnThreshold=" << droneCfg.turnThreshold
+            << ", timeStep=" << droneCfg.timeStep
+            << ", timeScale=" << droneCfg.timeScale);
         return;
     }
 

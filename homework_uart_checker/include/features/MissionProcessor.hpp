@@ -46,6 +46,7 @@ private:
     std::size_t max_steps_ = 10000;
     std::optional<SimulationResult> simulation_result_ = std::nullopt;
 
+    void fixTelemetryStateIfNeeded(DroneTelemetry& telemetry, const DroneConfig& config);
     StepOutcome runStep(
         std::size_t step_index, const DroneConfig& config, const Ammo& ammo, float initial_horizontal_distance);
     bool isInFireRange(const DroneTelemetry& drone_telemetry, const Coord& predicted_target, float horizontal_distance, const DroneConfig& config) const;

@@ -36,8 +36,10 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    uart_bridge->start();
     mission_processor.start();
     mission_processor.join();
+    uart_bridge->stop();
 
     auto result = mission_processor.getSimulationResult();
     if (!result.has_value()) {
@@ -51,9 +53,9 @@ int main(int argc, char** argv)
             LOG("Simulation reached firing range in " << result.value().steps.size() << " steps");
             for (retries = 0; retries < 5; ++retries) {
                 // Use integer arithmetic for milliseconds (std::pow returns double)
-                std::this_thread::sleep_for(std::chrono::milliseconds((1u << retries) * 100u));
+                std::this_thread::sleep_for(std::chrono::milliseconds((1u << retries) * 1000u));
                 auto result = uart_bridge->getResult();
-                if (!result.has_value()) {
+                if (result.has_value()) {
                     LOG("Received result from checker: hit:" << static_cast<int>(result.value().hit)
                         << " targetId:" << static_cast<int>(result.value().targetId)
                         << " miss_m:" << result.value().miss_m
