@@ -28,7 +28,9 @@ bool JsonConfigLoader::tryLoadConfig(const std::string filename)
     config_->turnThreshold = j["drone"]["turnThreshold"];
     config_->ammoName = j["ammo"];
     config_->simTimeStep = j["simulation"]["timeStep"];
+    config_->physicsTimeStep = j["simulation"].value("physicsTimeStep", config_->simTimeStep);
     config_->hitRadius = j["simulation"]["hitRadius"];
+    config_->timeScale = j["simulation"].value("timeScale", 1.0F);
     config_->arrayTimeStep = j["targetArrayTimeStep"];
 
     if (!file) {
@@ -47,9 +49,9 @@ bool JsonConfigLoader::tryLoadConfig(const std::string filename)
     return true;
 }
 
-DroneConfig* JsonConfigLoader::getConfig() const
+std::shared_ptr<DroneConfig> JsonConfigLoader::getConfig() const
 {
-    return config_.get();
+    return config_;
 }
 
 Ammo* JsonConfigLoader::getAmmoParams() const

@@ -6,7 +6,9 @@ class DroneMotionProfile final {
 public:
     bool init(const DroneConfig& config);
 
-    float acceleration() const;
+    float acceleration() const {
+        return initialized_ ? acceleration_ : 0.0F;
+    }
     float remainingAccelerationPath(float speed) const;
     float remainingDecelerationPath(float speed) const;
 
