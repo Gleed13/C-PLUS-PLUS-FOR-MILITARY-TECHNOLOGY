@@ -5,6 +5,15 @@
 
 ## 2026-07-26
 
+### Fixed
+
+- Block 5 / Lesson 5.6 / Homework 14: для `/robot/local_scan`,
+  `/robot/metrics` і `/robot/result` додано спільний `Reliable`,
+  `Transient Local`, `KeepLast(1)` QoS-контракт. Late subscriber тепер
+  отримує останній стан після запуску, зокрема коли `ros2 bag record`
+  сповільнює старт ноди рішення. Для subscription на state topic-и надано
+  helper `underground_world::make_state_qos()`.
+
 ### Added
 
 - Block 5 / Lesson 5.5: додано ROS 2 demo `demos/lesson_5_5` з двома
