@@ -3,6 +3,19 @@
 Усі помітні зміни в цьому репо фіксуються тут.
 Формат - [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/), дати в ISO 8601.
 
+## 2026-07-26
+
+### Added
+
+- Block 5 / Lesson 5.5: додано ROS 2 demo `demos/lesson_5_5` з двома
+  прикладами. Перший порівнює передачу fixed-size payload 1 MB, 10 MB і
+  100 MB через CycloneDDS без SharedMemory та через CycloneDDS/iceoryx
+  SharedMemory. Другий показує reliability mismatch, transient local late
+  joiner і вплив KeepLast depth на повільного subscriber-а.
+- Block 5 / Lesson 5.5: devcontainer доповнено ROS Jazzy iceoryx,
+  `rosidl_default_generators`, `btop` і shared memory budget 2 GB для запуску
+  demo з payload до 100 MB.
+
 ## 2026-07-17
 
 ### Removed
