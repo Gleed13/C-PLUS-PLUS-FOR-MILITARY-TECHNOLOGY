@@ -36,8 +36,8 @@ struct C2Controller::Impl {
 
     void transition(C2State next) {
         if (next != state) {
-            logMsg("[C2] state: " + std::to_string(static_cast<int>(state)) +
-                   " -> " + std::to_string(static_cast<int>(next)));
+            logMsg(std::string("[C2] state: ") + state_name(state) +
+                   " -> " + state_name(next));
             state = next;
             if (next == C2State::DISARMED) {
                 logMsg("[C2] blocked: waypoint in DISARMED");
