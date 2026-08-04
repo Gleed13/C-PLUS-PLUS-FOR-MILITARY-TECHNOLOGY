@@ -151,8 +151,240 @@
       "MIMode": "gdb",
       "miDebuggerPath": "/usr/bin/gdb"
     },
+    {
+      // ДЗ 13: запускає готову ноду напряму (без ros2 launch), з тим самим
+      // config/sequence.yaml, що й launch/system.launch.py, і обраним треком.
+      "name": "ROS: Debug target_track_publisher_node",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib/antidrone_turret/target_track_publisher_node",
+      "args": [
+        "--ros-args",
+        "--params-file",
+        "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/share/antidrone_turret/config/sequence.yaml",
+        "-p",
+        "track_file:=${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/share/antidrone_turret/tracks/${input:antidroneTrackFile}",
+        "--log-level",
+        "debug"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "envFile": "${workspaceFolder}/homework_13/robot_ws/.vscode_ros_env.env",
+      // externalConsole МУСИТЬ бути false у devcontainer. cppdbg надсилає
+      // VS Code DAP-запит runInTerminal: при true - kind="external", і VS Code
+      // шукає термінальний емулятор (x-terminal-emulator, gnome-terminal,
+      // konsole, xterm). В образі курсу жодного з них немає, тому debug-сесія
+      // не стартує взагалі. При false - kind="integrated", тобто GDB працює у
+      // вбудованому терміналі VS Code з нормальним tty.
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "colcon: build antidrone_turret (debug)",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      // ДЗ 13: готова actuator-нода. Приймає /actuator/trigger і публікує
+      // READY/RELOADING - зручно ставити breakpoint у ActuatorModel.
+      "name": "ROS: Debug actuator_node",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib/antidrone_turret/actuator_node",
+      "args": [
+        "--ros-args",
+        "--params-file",
+        "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/share/antidrone_turret/config/sequence.yaml",
+        "--log-level",
+        "debug"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "envFile": "${workspaceFolder}/homework_13/robot_ws/.vscode_ros_env.env",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "colcon: build antidrone_turret (debug)",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      // ДЗ 13: студентська нода. Виконуваний файл з'явиться тут щойно у
+      // CMakeLists.txt буде доданий ament_auto_add_executable(turret_controller_node ...).
+      "name": "ROS: Debug turret_controller_node",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib/antidrone_turret/turret_controller_node",
+      "args": [
+        "--ros-args",
+        "--params-file",
+        "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/share/antidrone_turret/config/sequence.yaml",
+        "--log-level",
+        "debug"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "envFile": "${workspaceFolder}/homework_13/robot_ws/.vscode_ros_env.env",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "colcon: build antidrone_turret (debug)",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      // ДЗ 13: студентська нода гімбала. Параметрів у sequence.yaml немає,
+      // тому запускається без --params-file.
+      "name": "ROS: Debug gimbal_driver_node",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib/antidrone_turret/gimbal_driver_node",
+      "args": [
+        "--ros-args",
+        "--log-level",
+        "debug"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "envFile": "${workspaceFolder}/homework_13/robot_ws/.vscode_ros_env.env",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "colcon: build antidrone_turret (debug)",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      // ДЗ 13: студентська нода yaw-серво.
+      "name": "ROS: Debug yaw_servo_driver_node",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/install/antidrone_turret/lib/antidrone_turret/yaw_servo_driver_node",
+      "args": [
+        "--ros-args",
+        "--log-level",
+        "debug"
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "envFile": "${workspaceFolder}/homework_13/robot_ws/.vscode_ros_env.env",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "colcon: build antidrone_turret (debug)",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      // ДЗ 13: gtest-бінарник наданого тесту. gtest-виконувані файли ament_add_gtest
+      // лишаються у build/, а не install/.
+      "name": "ROS: Debug provided_logic_test",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/build/antidrone_turret/provided_logic_test",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "envFile": "${workspaceFolder}/homework_13/robot_ws/.vscode_ros_env.env",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "colcon: build antidrone_turret (debug)",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      // ДЗ 13: заготовка під власний тест логіки контролера. Перейменуйте
+      // "controller_logic_test" на реальну назву ament_add_gtest(...) таргета,
+      // який ви додасте у CMakeLists.txt.
+      "name": "ROS: Debug controller_logic_test",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_13/robot_ws/build/antidrone_turret/controller_logic_test",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_13/robot_ws",
+      "envFile": "${workspaceFolder}/homework_13/robot_ws/.vscode_ros_env.env",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "colcon: build antidrone_turret (debug)",
+      "setupCommands": [
+        {
+          "description": "Увімкнути pretty-printing для STL типів у GDB.",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+  ],
+  "compounds": [
+    {
+      // ДЗ 13: піднімає весь граф ROS 2 одразу (5 окремих gdb-сесій),
+      // еквівалент ros2 launch antidrone_turret system.launch.py, але під
+      // дебагером.
+      //
+      // Тут свідомо НЕМАЄ "preLaunchTask": VS Code все одно запускає
+      // preLaunchTask кожної конфігурації зі списку, і власний preLaunchTask
+      // compound-а став би шостим паралельним colcon build у тій самій
+      // робочій області. Сам task серіалізований через flock, тому п'ять
+      // запусків шикуються в чергу: перший збирає, решта - no-op.
+      //
+      // Спрацює тільки після того, як у CMakeLists.txt з'являться
+      // turret_controller_node, gimbal_driver_node і yaw_servo_driver_node.
+      "name": "ROS: Debug ALL antidrone_turret nodes",
+      "configurations": [
+        "ROS: Debug target_track_publisher_node",
+        "ROS: Debug actuator_node",
+        "ROS: Debug turret_controller_node",
+        "ROS: Debug gimbal_driver_node",
+        "ROS: Debug yaw_servo_driver_node"
+      ],
+      "stopAll": true
+    }
   ],
   "inputs": [
+    {
+      "id": "antidroneTrackFile",
+      "type": "pickString",
+      "description": "Select antidrone_turret track CSV",
+      "options": [
+        "approach_trigger.csv",
+        "far_flyby_no_trigger.csv",
+        "low_confidence_no_trigger.csv",
+        "reload_pressure.csv"
+      ],
+      "default": "approach_trigger.csv"
+    },
     {
       "id": "ugvOdometryInputFile",
       "type": "pickString",
