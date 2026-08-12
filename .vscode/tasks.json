@@ -53,31 +53,6 @@
         "panel": "dedicated",
         "clear": true
       }
-    },
-    {
-      // ДЗ 13: colcon debug build antidrone_turret + dump сорсованого ROS
-      // оточення у .vscode_ros_env.env, щоб launch-конфігурації нижче могли
-      // запускати вузли/тести напряму через gdb (envFile) без ручного
-      // "source install/setup.bash" у кожному терміналі.
-      //
-      // flock серіалізує запуски: compound "Debug ALL ..." тягне цей task
-      // один раз на кожну з п'яти конфігурацій, а паралельний colcon build у
-      // спільних build/ та install/ ламає робочу область.
-      "label": "colcon: build antidrone_turret (debug)",
-      "type": "shell",
-      "command": "flock .colcon-build.lock bash -c \"source /opt/ros/jazzy/setup.bash && colcon build --symlink-install --packages-select antidrone_turret --cmake-args -DCMAKE_BUILD_TYPE=Debug && source install/setup.bash && env | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' > .vscode_ros_env.env\"",
-      "options": {
-        "cwd": "${workspaceFolder}/homework_13/robot_ws"
-      },
-      "group": "build",
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
     }
   ]
 }
