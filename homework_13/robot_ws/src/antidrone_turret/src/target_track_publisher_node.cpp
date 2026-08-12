@@ -151,6 +151,7 @@ private:
 
 int main(int argc, char** argv)
 {
+  std::cout << "hello from target_track_publisher_node" << std::endl;
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<TargetTrackPublisherNode>());
   rclcpp::shutdown();

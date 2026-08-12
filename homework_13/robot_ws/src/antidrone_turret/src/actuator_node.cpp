@@ -116,6 +116,7 @@ private:
 
 int main(int argc, char** argv)
 {
+  std::cout << "hello from actuator_node" << std::endl;
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<ActuatorNode>());
   rclcpp::shutdown();
