@@ -35,3 +35,9 @@ core.*
 # Метадані операційної системи не є частиною навчального репозиторію.
 .DS_Store
 Thumbs.db
+
+# ROS 2 colcon workspace артефакти (homework_13/robot_ws та подібні).
+install/
+log/
+.vscode_ros_env.env
+.colcon-build.lock
