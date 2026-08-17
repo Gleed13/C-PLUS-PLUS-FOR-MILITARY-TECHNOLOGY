@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>payload_action</name>
+  <version>0.1.0</version>
+  <description>Payload trigger relay: turns /payload/trigger service calls into /payload/enemy_down events.</description>
+
+  <maintainer email="gleed1369@gmail.com">Gleed</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>underground_world</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

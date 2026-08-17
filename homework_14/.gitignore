@@ -1,7 +1,8 @@
 robot_ws/build/
 robot_ws/install/
 robot_ws/log/
-bags/
+robot_ws/.cache/
+compile_commands.json
 reports/*.mcap
 reports/*.db3
 reports/*/
