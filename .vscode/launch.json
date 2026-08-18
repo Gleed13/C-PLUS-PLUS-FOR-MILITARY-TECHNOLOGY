@@ -151,6 +151,36 @@
       "MIMode": "gdb",
       "miDebuggerPath": "/usr/bin/gdb"
     },
+    {
+      "name": "Debug homework_uart_checker",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_uart_checker/build/uart_checker",
+      "args": [
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_uart_checker",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    },
+    {
+      "name": "Debug homework_uart_checker on RPi",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/homework_uart_checker/build/uart_checker",
+      "args": [
+        "data/config.json",
+        "data/ballistic_table.txt",
+      ],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/homework_uart_checker",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb"
+    }
   ],
   "inputs": [
     {
